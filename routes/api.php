@@ -35,6 +35,8 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::get("/admin/stats", [AdminController::class, "getDashboardStats"]);
         Route::post("/admin/make-admin/{id}", [AdminController::class, "makeAdmin"]);
         Route::post("/admin/remove-admin/{id}", [AdminController::class, "removeAdmin"]);
+        Route::post("/admin/users/{id}/activate", [AdminController::class, "activateUser"]);
+        Route::post("/admin/users/{id}/deactivate", [AdminController::class, "deactivateUser"]);
     });
 
     // Protected chorale routes (création, modification, suppression)

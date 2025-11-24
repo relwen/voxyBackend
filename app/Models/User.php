@@ -25,6 +25,7 @@ class User extends Authenticatable
         'phone',
         'role',
         'status',
+        'is_active',
         'chorale_id',
         'voice_part'
     ];

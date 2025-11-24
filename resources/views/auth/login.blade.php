@@ -5,69 +5,197 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - VoXY Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .form-input {
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        .shape:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .shape:nth-child(2) { top: 20%; right: 10%; animation-delay: 2s; }
+        .shape:nth-child(3) { bottom: 10%; left: 20%; animation-delay: 4s; }
+        .shape:nth-child(4) { bottom: 20%; right: 20%; animation-delay: 1s; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8">
-        <div>
-            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-                <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-                </svg>
+<body class="gradient-bg min-h-screen flex items-center justify-center relative">
+    <!-- Floating shapes background -->
+    <div class="floating-shapes">
+        <div class="shape w-20 h-20 bg-white rounded-full"></div>
+        <div class="shape w-16 h-16 bg-white rounded-lg"></div>
+        <div class="shape w-12 h-12 bg-white rounded-full"></div>
+        <div class="shape w-24 h-24 bg-white rounded-lg transform rotate-45"></div>
+    </div>
+
+    <div class="max-w-md w-full space-y-8 relative z-10" x-data="{ showPassword: false, loading: false }">
+        <!-- Logo et titre -->
+        <div class="text-center">
+            <div class="mx-auto h-20 w-20 glass-effect rounded-full flex items-center justify-center mb-6">
+                <i class="fas fa-music text-3xl text-white"></i>
             </div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Connexion Administrateur
+            <h2 class="text-4xl font-bold text-white mb-2">
+                VoXY Admin
             </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                VoXY - Plateforme de gestion de chorales
+            <p class="text-white/80 text-lg">
+                Plateforme de gestion de chorales
             </p>
         </div>
         
+        <!-- Messages d'erreur -->
         @if ($errors->any())
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                <ul class="list-disc list-inside">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+            <div class="glass-effect border border-red-300/30 text-white px-4 py-3 rounded-lg" x-data="{ show: true }" x-show="show" x-transition>
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-red-300 mt-1 mr-3"></i>
+                    <div class="flex-1">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li class="text-sm">{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <button @click="show = false" class="text-white/60 hover:text-white ml-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         @endif
 
-        <form class="mt-8 space-y-6" action="{{ route('login') }}" method="POST">
+        <!-- Formulaire de connexion -->
+        <form class="mt-8 space-y-6 glass-effect p-8 rounded-2xl" action="{{ route('login') }}" method="POST" @submit="loading = true">
             @csrf
-            <div class="rounded-md shadow-sm -space-y-px">
+            
+            <div class="space-y-6">
+                <!-- Email -->
                 <div>
-                    <label for="email" class="sr-only">Adresse email</label>
+                    <label for="email" class="block text-sm font-medium text-white mb-2">
+                        <i class="fas fa-envelope mr-2"></i>Adresse email
+                    </label>
                     <input id="email" name="email" type="email" required 
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
-                           placeholder="Adresse email"
-                           value="{{ old('email') }}">
+                           class="form-input w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent" 
+                           placeholder="admin@voxy.com"
+                           value="{{ old('email', 'admin@voxy.com') }}">
                 </div>
+                
+                <!-- Mot de passe -->
                 <div>
-                    <label for="password" class="sr-only">Mot de passe</label>
-                    <input id="password" name="password" type="password" required 
-                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
-                           placeholder="Mot de passe">
+                    <label for="password" class="block text-sm font-medium text-white mb-2">
+                        <i class="fas fa-lock mr-2"></i>Mot de passe
+                    </label>
+                    <div class="relative">
+                        <input id="password" name="password" :type="showPassword ? 'text' : 'password'" required 
+                               class="form-input w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent" 
+                               placeholder="admin123"
+                               value="admin123">
+                        <button type="button" @click="showPassword = !showPassword" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-white/60 hover:text-white">
+                            <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Se souvenir de moi -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember" name="remember" type="checkbox" 
+                               class="h-4 w-4 text-white/20 focus:ring-white/50 border-white/20 rounded bg-white/10">
+                        <label for="remember" class="ml-2 block text-sm text-white/80">
+                            Se souvenir de moi
+                        </label>
+                    </div>
+                    <div class="text-sm">
+                        <a href="#" class="text-white/80 hover:text-white transition-colors">
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div>
+            <!-- Bouton de connexion -->
+            <div class="pt-4">
                 <button type="submit" 
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                        </svg>
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-purple-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-all duration-200 hover:shadow-lg"
+                        :disabled="loading">
+                    <span x-show="!loading" class="flex items-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Se connecter
                     </span>
-                    Se connecter
+                    <span x-show="loading" class="flex items-center">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        Connexion...
+                    </span>
                 </button>
             </div>
 
-            <div class="text-center">
-                <p class="text-sm text-gray-600">
-                    Compte de test : admin@voxy.com / admin123
+            <!-- Informations de test -->
+            <div class="text-center pt-4 border-t border-white/20">
+                <p class="text-sm text-white/70 mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Compte de démonstration
                 </p>
+                <div class="bg-white/10 rounded-lg p-3 text-xs text-white/80">
+                    <div class="flex justify-between items-center mb-1">
+                        <span>Email:</span>
+                        <code class="bg-white/20 px-2 py-1 rounded">admin@voxy.com</code>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Mot de passe:</span>
+                        <code class="bg-white/20 px-2 py-1 rounded">admin123</code>
+                    </div>
+                </div>
             </div>
         </form>
+
+        <!-- Footer -->
+        <div class="text-center">
+            <p class="text-white/60 text-sm">
+                © 2024 VoXY. Tous droits réservés.
+            </p>
+        </div>
     </div>
+
+    <script>
+        // Auto-fill demo credentials
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            // Focus animation
+            [emailInput, passwordInput].forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('transform', 'scale-105');
+                });
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('transform', 'scale-105');
+                });
+            });
+        });
+    </script>
 </body>
 </html> 

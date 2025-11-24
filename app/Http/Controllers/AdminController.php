@@ -110,4 +110,32 @@ class AdminController extends Controller
             'message' => 'Statut d\'administrateur retiré'
         ]);
     }
+
+    /**
+     * Activer un utilisateur
+     */
+    public function activateUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Utilisateur activé avec succès'
+        ]);
+    }
+
+    /**
+     * Désactiver un utilisateur
+     */
+    public function deactivateUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Utilisateur désactivé'
+        ]);
+    }
 }

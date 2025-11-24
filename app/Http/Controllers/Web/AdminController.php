@@ -488,20 +488,20 @@ class AdminController extends Controller
     public function approveUser($id)
     {
         $user = User::findOrFail($id);
-        $user->update(['is_approved' => true]);
+        $user->update(['status' => 'approved']);
 
         return back()->with('success', 'Utilisateur approuvé avec succès.');
     }
 
     /**
-     * Désapprouver un utilisateur
+     * Rejeter un utilisateur
      */
-    public function disapproveUser($id)
+    public function rejectUser($id)
     {
         $user = User::findOrFail($id);
-        $user->update(['is_approved' => false]);
+        $user->update(['status' => 'rejected']);
 
-        return back()->with('success', 'Utilisateur désapprouvé.');
+        return back()->with('success', 'Utilisateur rejeté.');
     }
 
     /**

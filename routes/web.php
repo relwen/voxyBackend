@@ -31,6 +31,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/users/{id}/edit', [WebAdminController::class, 'editUser'])->name('admin.users.edit');
     Route::post('/admin/users/{id}/update', [WebAdminController::class, 'updateUser'])->name('admin.users.update');
     Route::post('/admin/users/{id}/approve', [WebAdminController::class, 'approveUser'])->name('admin.users.approve');
+    Route::post('/admin/users/{id}/reject', [WebAdminController::class, 'rejectUser'])->name('admin.users.reject');
     Route::post('/admin/users/{id}/disapprove', [WebAdminController::class, 'disapproveUser'])->name('admin.users.disapprove');
     Route::post('/admin/users/{id}/activate', [WebAdminController::class, 'activateUser'])->name('admin.users.activate');
     Route::post('/admin/users/{id}/deactivate', [WebAdminController::class, 'deactivateUser'])->name('admin.users.deactivate');

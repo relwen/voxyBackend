@@ -5,180 +5,242 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - VoXY Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .bg-primary { background: rgb(158, 2, 80); }
+        .bg-primary-gradient { background: linear-gradient(135deg, rgb(78, 13, 4), rgb(179, 5, 5), rgb(158, 2, 80)); }
+        .text-primary { color: rgb(158, 2, 80); }
+        .border-primary { border-color: rgb(158, 2, 80); }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Navigation -->
-    <nav class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-xl font-bold text-gray-900">VoXY Admin</h1>
-                    </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="{{ route('admin.dashboard') }}" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Dashboard
-                        </a>
-                        <a href="{{ route('admin.users') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Utilisateurs
-                        </a>
-                        <a href="{{ route('admin.chorales') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Chorales
-                        </a>
-                        <a href="{{ route('admin.partitions') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Partitions
-                        </a>
-                        <a href="{{ route('admin.categories') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Catégories
-                        </a>
-                        <a href="{{ route('admin.messes.index') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Messes
-                        </a>
-                        <a href="{{ route('admin.vocalises.index') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Vocalises
-                        </a>
-                    </div>
-                </div>
+<body class="bg-gray-50" x-data="{ sidebarOpen: false }">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
+         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+        
+        <!-- Logo -->
+        <div class="flex items-center justify-center h-16 bg-primary-gradient">
+            <h1 class="text-xl font-bold text-white">VoXY Admin</h1>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="mt-8">
+            <div class="px-4 space-y-2">
+                <a href="{{ route('admin.dashboard') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors bg-gray-100 text-primary border-r-4 border-primary">
+                    <i class="fas fa-chart-line w-5 h-5 mr-3"></i>
+                    Dashboard
+                </a>
+                
+                <a href="{{ route('admin.users') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-users w-5 h-5 mr-3"></i>
+                    Utilisateurs
+                    @if($stats['pending_users'] > 0)
+                        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $stats['pending_users'] }}</span>
+                    @endif
+                </a>
+                
+                <a href="{{ route('admin.chorales') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-music w-5 h-5 mr-3"></i>
+                    Chorales
+                </a>
+                
+                <a href="{{ route('admin.partitions') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-file-music w-5 h-5 mr-3"></i>
+                    Partitions
+                </a>
+                
+                <a href="{{ route('admin.messes.index') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-church w-5 h-5 mr-3"></i>
+                    Messes
+                </a>
+                
+                <a href="{{ route('admin.vocalises.index') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-microphone w-5 h-5 mr-3"></i>
+                    Vocalises
+                </a>
+                
+                <a href="{{ route('admin.categories') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-tags w-5 h-5 mr-3"></i>
+                    Catégories
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Overlay mobile -->
+    <div x-show="sidebarOpen" 
+         class="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+         @click="sidebarOpen = false"></div>
+    
+    <!-- Contenu principal -->
+    <div class="lg:ml-64">
+        <!-- Navbar -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="flex items-center justify-between px-6 py-4">
                 <div class="flex items-center">
-                    <span class="text-gray-700 mr-4">{{ Auth::user()->name }}</span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                            Déconnexion
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="ml-4 lg:ml-0 text-2xl font-bold text-gray-800">Dashboard</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell text-lg"></i>
+                            @if($stats['pending_users'] > 0)
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{ $stats['pending_users'] }}</span>
+                            @endif
                         </button>
-                    </form>
+                    </div>
+                    
+                    <!-- Profil -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-medium">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                        </div>
+                        <span class="font-medium text-gray-700">{{ Auth::user()->name }}</span>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <!-- Contenu principal -->
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Contenu -->
+        <main class="p-6">
         @if(session('success'))
             <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
                 {{ session('success') }}
             </div>
         @endif
 
-        <!-- Statistiques -->
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-                            </svg>
+            <!-- Statistiques -->
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Total Utilisateurs</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ $stats['total_users'] }}</p>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Utilisateurs</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ $stats['total_users'] }}</dd>
-                            </dl>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">En attente</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ $stats['pending_users'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-music text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Chorales</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ $stats['total_chorales'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file-music text-purple-600 text-xl"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Partitions</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ $stats['total_partitions'] }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">En attente</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ $stats['pending_users'] }}</dd>
-                            </dl>
-                        </div>
-                    </div>
+            <!-- Utilisateurs récents -->
+            <div class="bg-white shadow-lg rounded-xl border border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Utilisateurs récents</h3>
+                    <p class="text-sm text-gray-600">Les derniers utilisateurs inscrits</p>
                 </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-                            </svg>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Chorales</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ $stats['total_chorales'] }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Partitions</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ $stats['total_partitions'] }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Utilisateurs récents -->
-        <div class="mt-8">
-            <div class="bg-white shadow overflow-hidden sm:rounded-md">
-                <div class="px-4 py-5 sm:px-6">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">Utilisateurs récents</h3>
-                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Les derniers utilisateurs inscrits</p>
-                </div>
-                <ul class="divide-y divide-gray-200">
+                <div class="divide-y divide-gray-200">
                     @foreach($recentUsers as $user)
-                    <li>
-                        <div class="px-4 py-4 flex items-center justify-between sm:px-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                        <span class="text-sm font-medium text-gray-700">{{ substr($user->name, 0, 1) }}</span>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                                    @if($user->chorale)
-                                        <div class="text-sm text-gray-500">{{ $user->chorale->name }}</div>
-                                    @endif
-                                </div>
+                    <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">{{ substr($user->name, 0, 1) }}</span>
                             </div>
-                            <div class="flex items-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    @if($user->status === 'approved') bg-green-100 text-green-800
-                                    @elseif($user->status === 'pending') bg-yellow-100 text-yellow-800
-                                    @else bg-red-100 text-red-800 @endif">
-                                    {{ ucfirst($user->status) }}
-                                </span>
-                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    @if($user->role === 'admin') bg-purple-100 text-purple-800
-                                    @else bg-gray-100 text-gray-800 @endif">
-                                    {{ ucfirst($user->role) }}
-                                </span>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
+                                <div class="text-sm text-gray-500">{{ $user->email }}</div>
+                                @if($user->chorale)
+                                    <div class="text-xs text-gray-400">{{ $user->chorale->name }}</div>
+                                @endif
                             </div>
                         </div>
-                    </li>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                @if($user->status === 'approved') bg-green-100 text-green-800
+                                @elseif($user->status === 'pending') bg-yellow-100 text-yellow-800
+                                @else bg-red-100 text-red-800 @endif">
+                                @if($user->status === 'approved') Approuvé
+                                @elseif($user->status === 'pending') En attente
+                                @else Rejeté @endif
+                            </span>
+                            @if($user->role === 'admin')
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    Admin
+                                </span>
+                            @endif
+                        </div>
+                    </div>
                     @endforeach
-                </ul>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <a href="{{ route('admin.users') }}" class="text-primary hover:text-primary font-medium text-sm">
+                        Voir tous les utilisateurs →
+                    </a>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 </body>
-</html> 
+</html>

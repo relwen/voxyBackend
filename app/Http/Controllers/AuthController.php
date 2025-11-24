@@ -203,6 +203,14 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Vérifier si le compte est actif
+        if (!$user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Votre compte est désactivé. Contactez l\'administrateur.'
+            ], 403);
+        }
+
         // Créer un token pour l'utilisateur
         $token = $user->createToken('auth_token')->plainTextToken;
 
