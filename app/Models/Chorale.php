@@ -36,4 +36,28 @@ class Chorale extends Model
     {
         return $this->hasMany(Vocalise::class);
     }
+
+    /**
+     * Relation avec les pupitres de la chorale
+     */
+    public function pupitres(): HasMany
+    {
+        return $this->hasMany(ChoralePupitre::class)->ordered();
+    }
+
+    /**
+     * Relation avec les catégories de la chorale
+     */
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class)->orderBy('name');
+    }
+
+    /**
+     * Obtenir le pupitre par défaut (Tutti)
+     */
+    public function getDefaultPupitre()
+    {
+        return $this->pupitres()->where('is_default', true)->first();
+    }
 }

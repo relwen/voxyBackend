@@ -3,9 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\AuthController as WebAuthController;
 use App\Http\Controllers\Web\AdminController as WebAdminController;
-use App\Http\Controllers\Web\VocaliseController as WebVocaliseController;
-use App\Http\Controllers\Web\ReferenceController as WebReferenceController;
-use App\Http\Controllers\Web\MesseController as WebMesseController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -15,10 +12,16 @@ Route::get('/test', function () {
     return 'Ceci est une page de test !';
 });
 
-// Routes d'authentification web
+// Routes d'authentification web (publiques)
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login']);
+Route::get('/login-maestro', [WebAuthController::class, 'showMaestroLoginForm'])->name('login.maestro');
+Route::post('/login-maestro', [WebAuthController::class, 'loginMaestro'])->name('login.maestro.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
+
+// Routes d'inscription pour créer une chorale (publiques - pas besoin d'être admin)
+Route::get('/register-chorale', [WebAuthController::class, 'showRegisterForm'])->name('register.chorale');
+Route::post('/register-chorale', [WebAuthController::class, 'registerChorale'])->name('register.chorale.store');
 
 // Routes protégées pour l'administration
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -44,14 +47,52 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/chorales/{id}/edit', [WebAdminController::class, 'editChorale'])->name('admin.chorales.edit');
     Route::post('/admin/chorales/{id}/update', [WebAdminController::class, 'updateChorale'])->name('admin.chorales.update');
     Route::post('/admin/chorales/{id}/delete', [WebAdminController::class, 'deleteChorale'])->name('admin.chorales.delete');
+});
+
+// Configuration de la chorale (pupitres et rubriques) - Accessible aux maestros et admins
+Route::middleware(['auth', 'maestro'])->group(function () {
+    Route::get('/admin/chorale/config', [App\Http\Controllers\Web\ChoraleConfigController::class, 'index'])->name('admin.chorale.config');
+    Route::post('/admin/chorale/pupitres', [App\Http\Controllers\Web\ChoraleConfigController::class, 'storePupitre'])->name('admin.chorale.pupitres.store');
+    Route::get('/admin/chorale/pupitres/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'showPupitre'])->name('admin.chorale.pupitres.show');
+    Route::put('/admin/chorale/pupitres/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'updatePupitre'])->name('admin.chorale.pupitres.update');
+    Route::delete('/admin/chorale/pupitres/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'destroyPupitre'])->name('admin.chorale.pupitres.destroy');
+    Route::post('/admin/chorale/categories', [App\Http\Controllers\Web\ChoraleConfigController::class, 'storeCategory'])->name('admin.chorale.categories.store');
+    Route::get('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'showCategory'])->name('admin.chorale.categories.show');
+    Route::put('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'updateCategory'])->name('admin.chorale.categories.update');
+    Route::delete('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'destroyCategory'])->name('admin.chorale.categories.destroy');
+    Route::post('/admin/chorale/apply-template', [App\Http\Controllers\Web\ChoraleConfigController::class, 'applyTemplate'])->name('admin.chorale.apply-template');
     
-    // Gestion des partitions
-    Route::get('/admin/partitions', [WebAdminController::class, 'partitions'])->name('admin.partitions');
+    // Gestion des rubriques et leurs sections
+    Route::get('/admin/rubriques/{id}', [App\Http\Controllers\Web\RubriqueController::class, 'show'])->name('admin.rubriques.show');
+    Route::get('/admin/rubriques/{rubriqueId}/messes/{messeId}', [App\Http\Controllers\Web\RubriqueController::class, 'showMesse'])->name('admin.rubriques.messes.show');
+    Route::post('/admin/rubriques/{id}/messes', [App\Http\Controllers\Web\RubriqueController::class, 'storeMesse'])->name('admin.rubriques.messes.store');
+    Route::post('/admin/rubriques/{rubriqueId}/messes/{messeId}/partitions', [App\Http\Controllers\Web\RubriqueController::class, 'storePartitionForMessePart'])->name('admin.rubriques.messes.partitions.store');
+    Route::post('/admin/rubriques/{id}/sections', [App\Http\Controllers\Web\RubriqueController::class, 'storeSection'])->name('admin.rubriques.sections.store');
+    Route::get('/admin/rubriques/{rubriqueId}/sections/{sectionId}', [App\Http\Controllers\Web\RubriqueController::class, 'showSection'])->name('admin.rubriques.sections.show');
+    Route::put('/admin/rubriques/{rubriqueId}/sections/{sectionId}', [App\Http\Controllers\Web\RubriqueController::class, 'updateSection'])->name('admin.rubriques.sections.update');
+    Route::delete('/admin/rubriques/{rubriqueId}/sections/{sectionId}', [App\Http\Controllers\Web\RubriqueController::class, 'destroySection'])->name('admin.rubriques.sections.destroy');
+    Route::post('/admin/rubriques/{id}/partitions', [App\Http\Controllers\Web\RubriqueController::class, 'storePartitionDirect'])->name('admin.rubriques.partitions.store');
+    Route::post('/admin/rubriques/{rubriqueId}/sections/{sectionId}/partitions', [App\Http\Controllers\Web\RubriqueController::class, 'storePartition'])->name('admin.rubriques.sections.partitions.store');
+    
+    // Routes pour voir et modifier les partitions (accessibles aux maestros)
     Route::get('/admin/partitions/{id}', [WebAdminController::class, 'showPartition'])->name('admin.partitions.show');
-    Route::get('/admin/partitions/create', [WebAdminController::class, 'createPartition'])->name('admin.partitions.create');
-    Route::post('/admin/partitions', [WebAdminController::class, 'storePartition'])->name('admin.partitions.store');
     Route::get('/admin/partitions/{id}/edit', [WebAdminController::class, 'editPartition'])->name('admin.partitions.edit');
     Route::post('/admin/partitions/{id}/update', [WebAdminController::class, 'updatePartition'])->name('admin.partitions.update');
+    
+    // Gestion des utilisateurs pour les maestros
+    Route::get('/admin/maestro/users', [WebAdminController::class, 'maestroUsers'])->name('admin.maestro.users');
+    Route::post('/admin/maestro/users/{id}/approve', [WebAdminController::class, 'maestroApproveUser'])->name('admin.maestro.users.approve');
+    Route::post('/admin/maestro/users/{id}/reject', [WebAdminController::class, 'maestroRejectUser'])->name('admin.maestro.users.reject');
+    Route::post('/admin/maestro/users/{id}/delete', [WebAdminController::class, 'maestroDeleteUser'])->name('admin.maestro.users.delete');
+});
+
+// Routes protégées pour l'administration (suite)
+Route::middleware(['auth', 'admin'])->group(function () {
+    // Gestion des partitions (liste et création - admin uniquement)
+    Route::get('/admin/partitions', [WebAdminController::class, 'partitions'])->name('admin.partitions');
+    Route::get('/admin/partitions/create', [WebAdminController::class, 'createPartition'])->name('admin.partitions.create');
+    Route::post('/admin/partitions', [WebAdminController::class, 'storePartition'])->name('admin.partitions.store');
+    // Note: Les routes show, edit et update sont dans le groupe maestro pour permettre l'accès aux maestros
     Route::post('/admin/partitions/{id}/delete', [WebAdminController::class, 'deletePartition'])->name('admin.partitions.delete');
     
     // Gestion des catégories
@@ -61,43 +102,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/categories/{id}/edit', [WebAdminController::class, 'editCategory'])->name('admin.categories.edit');
     Route::post('/admin/categories/{id}/update', [WebAdminController::class, 'updateCategory'])->name('admin.categories.update');
     Route::post('/admin/categories/{id}/delete', [WebAdminController::class, 'deleteCategory'])->name('admin.categories.delete');
-    
-    // Gestion des messes
-    Route::get('/admin/messes', [WebMesseController::class, 'index'])->name('admin.messes.index');
-    Route::get('/admin/messes/{id}', [WebMesseController::class, 'show'])->name('admin.messes.show');
-    Route::get('/admin/messes/create', [WebMesseController::class, 'create'])->name('admin.messes.create');
-    Route::post('/admin/messes', [WebMesseController::class, 'store'])->name('admin.messes.store');
-    Route::get('/admin/messes/{id}/edit', [WebMesseController::class, 'edit'])->name('admin.messes.edit');
-    Route::post('/admin/messes/{id}/update', [WebMesseController::class, 'update'])->name('admin.messes.update');
-    Route::post('/admin/messes/{id}/delete', [WebMesseController::class, 'destroy'])->name('admin.messes.delete');
-    Route::get('/admin/messes/{id}/references', [WebMesseController::class, 'references'])->name('admin.messes.references');
-    
-    // Accès aux fichiers
-    Route::get('/admin/files/partition/{partitionId}/{fileType}/{fileIndex}', [WebMesseController::class, 'serveFile'])->name('admin.files.serve');
-    
-    // Gestion des références
-    Route::get('/admin/references', [WebReferenceController::class, 'index'])->name('admin.references.index');
-    Route::get('/admin/references/create', [WebReferenceController::class, 'create'])->name('admin.references.create');
-    Route::post('/admin/references', [WebReferenceController::class, 'store'])->name('admin.references.store');
-    Route::get('/admin/references/{id}/edit', [WebReferenceController::class, 'edit'])->name('admin.references.edit');
-    Route::post('/admin/references/{id}/update', [WebReferenceController::class, 'update'])->name('admin.references.update');
-    Route::post('/admin/references/{id}/delete', [WebReferenceController::class, 'destroy'])->name('admin.references.delete');
-    Route::get('/admin/references/messe/{messeId}', [WebReferenceController::class, 'getByMesse'])->name('admin.references.by-messe');
-    
-    // Gestion des partitions des sections
-    Route::get('/admin/references/{id}/partitions', [WebReferenceController::class, 'partitions'])->name('admin.references.partitions');
-    Route::get('/admin/references/{id}/partitions/create', [WebReferenceController::class, 'createPartition'])->name('admin.references.create-partition');
-    Route::post('/admin/references/{id}/partitions', [WebReferenceController::class, 'storePartition'])->name('admin.references.store-partition');
-    
-    // Gestion des vocalises
-    Route::get('/admin/vocalises', [WebVocaliseController::class, 'index'])->name('admin.vocalises.index');
-    Route::get('/admin/vocalises/create', [WebVocaliseController::class, 'create'])->name('admin.vocalises.create');
-    Route::post('/admin/vocalises', [WebVocaliseController::class, 'store'])->name('admin.vocalises.store');
-    Route::get('/admin/vocalises/{id}/edit', [WebVocaliseController::class, 'edit'])->name('admin.vocalises.edit');
-    Route::post('/admin/vocalises/{id}/update', [WebVocaliseController::class, 'update'])->name('admin.vocalises.update');
-    Route::post('/admin/vocalises/{id}/delete', [WebVocaliseController::class, 'destroy'])->name('admin.vocalises.delete');
-    Route::get('/admin/chorales/{choraleId}/vocalises', [WebVocaliseController::class, 'byChorale'])->name('admin.vocalises.by-chorale');
 });
 
 // Route publique pour accéder aux fichiers (sans authentification)
-Route::get('/files/partition/{partitionId}/{fileType}/{fileIndex}', [App\Http\Controllers\Web\MesseController::class, 'serveFile'])->name('files.serve');
+Route::get('/files/partition/{partitionId}/{fileIndex}', [App\Http\Controllers\PartitionController::class, 'downloadFile'])->name('files.serve');

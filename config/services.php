@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'itsenda' => [
+        'app_key' => env('ITSENDA_APP_KEY', '70f208fb-0ebe-4f6c-9d01-84f572232c3d'),
+        'auth_key' => env('ITSENDA_AUTH_KEY', 'g960JBdmz8VjbVGD3xpJshDdYPVlbnJVsdUVgZsbVXOaK6YgBZ'),
+        'base_url' => env('ITSENDA_BASE_URL', 'https://itsenda.com/api'),
+    ],
+
 ];

@@ -9,7 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(
+177deg, #991b1b 0%, #7b1b4b 100%);
         }
         .glass-effect {
             backdrop-filter: blur(10px);
@@ -24,7 +25,8 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(
+177deg, #991b1b 0%, #7b1b4b 100%);
             transition: all 0.3s ease;
         }
         .btn-primary:hover {

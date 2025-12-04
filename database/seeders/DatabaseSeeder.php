@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             ChoraleSeeder::class,
-            VocaliseSeeder::class,
         ]);
     }
 }

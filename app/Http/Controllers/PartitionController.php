@@ -7,6 +7,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
+use App\Helpers\FileHelper;
 
 class PartitionController extends Controller
 {
@@ -28,9 +29,7 @@ class PartitionController extends Controller
             'success' => true,
             'data' => $partitions->map(function ($partition) {
                 return array_merge($partition->toArray(), [
-                    'audio_url' => $partition->audio_url,
-                    'pdf_url' => $partition->pdf_url,
-                    'image_url' => $partition->image_url,
+                    'files_with_metadata' => $partition->files_with_metadata,
                     'category_name' => $partition->category->name ?? null,
                     'chorale_name' => $partition->chorale->name ?? null,
                 ]);
@@ -48,72 +47,64 @@ class PartitionController extends Controller
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'chorale_id' => 'required|exists:chorales,id',
-            'audio_files.*' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240', // 10MB max
-            'pdf_files.*' => 'nullable|file|mimes:pdf|max:20480', // 20MB max
-            'image_files.*' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
-            // Support pour les anciens champs uniques
-            'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
-            'pdf_file' => 'nullable|file|mimes:pdf|max:20480',
-            'image_file' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120',
+            'files.*' => 'nullable|file|max:20480', // 20MB max pour tous les types
         ]);
 
-        // Vérifier qu'au moins un fichier est fourni
-        $hasFiles = $request->hasFile('audio_file') || $request->hasFile('pdf_file') || $request->hasFile('image_file') ||
-                    $request->hasFile('audio_files') || $request->hasFile('pdf_files') || $request->hasFile('image_files');
-        
-        if (!$hasFiles) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Au moins un fichier (audio, PDF ou image) est requis.'
-            ], 422);
-        }
+        $data = $request->except(['files']);
 
-        $data = $request->except(['audio_file', 'pdf_file', 'image_file', 'audio_files', 'pdf_files', 'image_files']);
+        // Préparer les données pour le nommage des fichiers
+        $messeNom = null;
+        $partie = null;
+        $subPartie = null;
+        $pupitreNom = null;
 
-        // Traiter les fichiers audio multiples
-        if ($request->hasFile('audio_files')) {
-            $audioPaths = [];
-            foreach ($request->file('audio_files') as $file) {
-                $path = $file->store('partitions/audio', 'public');
-                $audioPaths[] = $path;
+        // Récupérer le nom de la messe si rubrique_section_id est fourni
+        if ($request->has('rubrique_section_id') && !empty($request->rubrique_section_id)) {
+            $rubriqueSection = \App\Models\RubriqueSection::find($request->rubrique_section_id);
+            if ($rubriqueSection) {
+                $messeNom = $rubriqueSection->nom;
             }
-            $data['audio_files'] = $audioPaths;
         }
 
-        // Traiter les fichiers PDF multiples
-        if ($request->hasFile('pdf_files')) {
-            $pdfPaths = [];
-            foreach ($request->file('pdf_files') as $file) {
-                $path = $file->store('partitions/pdf', 'public');
-                $pdfPaths[] = $path;
+        // Récupérer la partie si messe_part est fourni
+        if ($request->has('messe_part')) {
+            $messePart = is_array($request->messe_part) ? $request->messe_part : json_decode($request->messe_part, true);
+            if ($messePart) {
+                $partie = $messePart['part'] ?? null;
+                $subPartie = $messePart['subPart'] ?? null;
             }
-            $data['pdf_files'] = $pdfPaths;
         }
 
-        // Traiter les images multiples
-        if ($request->hasFile('image_files')) {
-            $imagePaths = [];
-            foreach ($request->file('image_files') as $file) {
-                $path = $file->store('partitions/images', 'public');
-                $imagePaths[] = $path;
+        // Récupérer le nom du pupitre
+        if ($request->has('pupitre_id') && !empty($request->pupitre_id)) {
+            $pupitre = \App\Models\ChoralePupitre::find($request->pupitre_id);
+            if ($pupitre) {
+                $pupitreNom = $pupitre->nom;
             }
-            $data['image_files'] = $imagePaths;
         }
 
-        // Support pour les anciens champs uniques (rétrocompatibilité)
-        if ($request->hasFile('audio_file')) {
-            $path = $request->file('audio_file')->store('partitions/audio', 'public');
-            $data['audio_path'] = $path;
-        }
-
-        if ($request->hasFile('pdf_file')) {
-            $path = $request->file('pdf_file')->store('partitions/pdf', 'public');
-            $data['pdf_path'] = $path;
-        }
-
-        if ($request->hasFile('image_file')) {
-            $path = $request->file('image_file')->store('partitions/images', 'public');
-            $data['image_path'] = $path;
+        // Traiter tous les fichiers de manière unifiée avec nommage personnalisé
+        if ($request->hasFile('files')) {
+            $filePaths = [];
+            foreach ($request->file('files') as $file) {
+                // Générer le nom de fichier personnalisé
+                $customFileName = FileHelper::generatePartitionFileName(
+                    $file,
+                    null,
+                    $messeNom,
+                    $partie,
+                    $subPartie,
+                    $pupitreNom
+                );
+                
+                // Déterminer le chemin de stockage selon le type de fichier
+                $storagePath = FileHelper::getStoragePath($file->getClientOriginalName());
+                
+                // Stocker le fichier avec le nom personnalisé
+                $path = $file->storeAs($storagePath, $customFileName, 'public');
+                $filePaths[] = $path;
+            }
+            $data['files'] = $filePaths;
         }
 
         $partition = Partition::create($data);
@@ -122,9 +113,7 @@ class PartitionController extends Controller
             'success' => true,
             'message' => 'Partition created successfully.',
             'data' => array_merge($partition->toArray(), [
-                'audio_url' => $partition->audio_url,
-                'pdf_url' => $partition->pdf_url,
-                'image_url' => $partition->image_url,
+                'files_with_metadata' => $partition->files_with_metadata,
                 'category_name' => $partition->category->name ?? null,
                 'chorale_name' => $partition->chorale->name ?? null,
             ])
@@ -139,9 +128,7 @@ class PartitionController extends Controller
         return response()->json([
             'success' => true,
             'data' => array_merge($partition->toArray(), [
-                'audio_url' => $partition->audio_url,
-                'pdf_url' => $partition->pdf_url,
-                'image_url' => $partition->image_url,
+                'files_with_metadata' => $partition->files_with_metadata,
                 'category_name' => $partition->category->name ?? null,
                 'chorale_name' => $partition->chorale->name ?? null,
             ])
@@ -158,91 +145,60 @@ class PartitionController extends Controller
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'chorale_id' => 'required|exists:chorales,id',
-            'audio_files.*' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
-            'pdf_files.*' => 'nullable|file|mimes:pdf|max:20480',
-            'image_files.*' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120',
-            // Support pour les anciens champs uniques
-            'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
-            'pdf_file' => 'nullable|file|mimes:pdf|max:20480',
-            'image_file' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120',
+            'files.*' => 'nullable|file|max:20480',
+            'remove_files' => 'nullable|array',
         ]);
 
-        $data = $request->except(['audio_file', 'pdf_file', 'image_file', 'audio_files', 'pdf_files', 'image_files']);
+        $data = $request->except(['files', 'remove_files']);
 
-        // Traiter les fichiers audio multiples
-        if ($request->hasFile('audio_files')) {
-            // Supprimer les anciens fichiers audio
-            if ($partition->audio_files) {
-                foreach ($partition->audio_files as $path) {
-                    Storage::disk('public')->delete($path);
+        // Gérer la suppression de fichiers
+        if ($request->has('remove_files') && $partition->files) {
+            $filesToRemove = $request->input('remove_files');
+            $currentFiles = $partition->files ?? [];
+            
+            foreach ($filesToRemove as $index) {
+                if (isset($currentFiles[$index])) {
+                    Storage::disk('public')->delete($currentFiles[$index]);
+                    unset($currentFiles[$index]);
                 }
             }
             
-            $audioPaths = [];
-            foreach ($request->file('audio_files') as $file) {
-                $path = $file->store('partitions/audio', 'public');
-                $audioPaths[] = $path;
-            }
-            $data['audio_files'] = $audioPaths;
+            $data['files'] = array_values($currentFiles);
         }
 
-        // Traiter les fichiers PDF multiples
-        if ($request->hasFile('pdf_files')) {
-            // Supprimer les anciens fichiers PDF
-            if ($partition->pdf_files) {
-                foreach ($partition->pdf_files as $path) {
-                    Storage::disk('public')->delete($path);
+        // Ajouter de nouveaux fichiers avec nommage personnalisé
+        if ($request->hasFile('files')) {
+            // Charger les relations nécessaires pour le nommage
+            $partition->load(['rubriqueSection', 'pupitre']);
+            
+            // Mettre à jour les données de la partition pour le nommage
+            $partition->fill($data);
+            
+            // Récupérer les fichiers existants pour éviter les doublons
+            $existingFiles = $data['files'] ?? $partition->files ?? [];
+            
+            $newFilePaths = [];
+            foreach ($request->file('files') as $file) {
+                // Générer le nom de fichier personnalisé basé sur la partition
+                $customFileName = FileHelper::generatePartitionFileName($file, $partition);
+                
+                // Déterminer le chemin de stockage selon le type de fichier
+                $storagePath = FileHelper::getStoragePath($file->getClientOriginalName());
+                
+                // S'assurer que le nom de fichier est unique
+                $uniqueFileName = FileHelper::ensureUniqueFileName($customFileName, array_merge($existingFiles, $newFilePaths), $storagePath);
+                
+                // Stocker le fichier avec le nom personnalisé unique
+                $path = $file->storeAs($storagePath, $uniqueFileName, 'public');
+                
+                // Vérifier que le fichier n'est pas déjà dans la liste (éviter les doublons)
+                if (!in_array($path, array_merge($existingFiles, $newFilePaths))) {
+                    $newFilePaths[] = $path;
                 }
             }
             
-            $pdfPaths = [];
-            foreach ($request->file('pdf_files') as $file) {
-                $path = $file->store('partitions/pdf', 'public');
-                $pdfPaths[] = $path;
-            }
-            $data['pdf_files'] = $pdfPaths;
-        }
-
-        // Traiter les images multiples
-        if ($request->hasFile('image_files')) {
-            // Supprimer les anciennes images
-            if ($partition->image_files) {
-                foreach ($partition->image_files as $path) {
-                    Storage::disk('public')->delete($path);
-                }
-            }
-            
-            $imagePaths = [];
-            foreach ($request->file('image_files') as $file) {
-                $path = $file->store('partitions/images', 'public');
-                $imagePaths[] = $path;
-            }
-            $data['image_files'] = $imagePaths;
-        }
-
-        // Support pour les anciens champs uniques (rétrocompatibilité)
-        if ($request->hasFile('audio_file')) {
-            if ($partition->audio_path) {
-                Storage::disk('public')->delete($partition->audio_path);
-            }
-            $path = $request->file('audio_file')->store('partitions/audio', 'public');
-            $data['audio_path'] = $path;
-        }
-
-        if ($request->hasFile('pdf_file')) {
-            if ($partition->pdf_path) {
-                Storage::disk('public')->delete($partition->pdf_path);
-            }
-            $path = $request->file('pdf_file')->store('partitions/pdf', 'public');
-            $data['pdf_path'] = $path;
-        }
-
-        if ($request->hasFile('image_file')) {
-            if ($partition->image_path) {
-                Storage::disk('public')->delete($partition->image_path);
-            }
-            $path = $request->file('image_file')->store('partitions/images', 'public');
-            $data['image_path'] = $path;
+            // Fusionner avec les fichiers existants (sans doublons)
+            $data['files'] = array_merge($existingFiles, $newFilePaths);
         }
 
         $partition->update($data);
@@ -251,9 +207,7 @@ class PartitionController extends Controller
             'success' => true,
             'message' => 'Partition updated successfully.',
             'data' => array_merge($partition->toArray(), [
-                'audio_url' => $partition->audio_url,
-                'pdf_url' => $partition->pdf_url,
-                'image_url' => $partition->image_url,
+                'files_with_metadata' => $partition->files_with_metadata,
                 'category_name' => $partition->category->name ?? null,
                 'chorale_name' => $partition->chorale->name ?? null,
             ])
@@ -265,31 +219,14 @@ class PartitionController extends Controller
      */
     public function destroy(Partition $partition)
     {
-        // Supprimer les fichiers associés (anciens champs uniques)
-        if ($partition->audio_path) {
-            Storage::disk('public')->delete($partition->audio_path);
-        }
-        if ($partition->pdf_path) {
-            Storage::disk('public')->delete($partition->pdf_path);
-        }
-        if ($partition->image_path) {
-            Storage::disk('public')->delete($partition->image_path);
-        }
-
-        // Supprimer les fichiers multiples
-        if ($partition->audio_files) {
-            foreach ($partition->audio_files as $path) {
-                Storage::disk('public')->delete($path);
-            }
-        }
-        if ($partition->pdf_files) {
-            foreach ($partition->pdf_files as $path) {
-                Storage::disk('public')->delete($path);
-            }
-        }
-        if ($partition->image_files) {
-            foreach ($partition->image_files as $path) {
-                Storage::disk('public')->delete($path);
+        // Supprimer tous les fichiers associés (nouveau système unifié)
+        if ($partition->files) {
+            foreach ($partition->files as $item) {
+                // Gérer le cas où $item est un tableau ou une chaîne
+                $path = is_array($item) ? ($item['path'] ?? $item['name'] ?? '') : $item;
+                if (!empty($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
         }
 
@@ -317,9 +254,7 @@ class PartitionController extends Controller
             'success' => true,
             'data' => $partitions->map(function ($partition) {
                 return array_merge($partition->toArray(), [
-                    'audio_url' => $partition->audio_url,
-                    'pdf_url' => $partition->pdf_url,
-                    'image_url' => $partition->image_url,
+                    'files_with_metadata' => $partition->files_with_metadata,
                     'category_name' => $partition->category->name ?? null,
                     'chorale_name' => $partition->chorale->name ?? null,
                 ]);
@@ -331,41 +266,24 @@ class PartitionController extends Controller
     /**
      * Download a specific file for a partition.
      */
-    public function downloadFile($id, $type)
+    public function downloadFile($id, $fileIndex)
     {
         $partition = Partition::findOrFail($id);
         
-        $path = null;
-        $filename = null;
-
-        switch ($type) {
-            case 'audio':
-                if (!$partition->audio_path || !Storage::disk('public')->exists($partition->audio_path)) {
-                    return response()->json(['success' => false, 'message' => 'Audio file not found.'], 404);
-                }
-                $path = Storage::disk('public')->path($partition->audio_path);
-                $filename = basename($partition->audio_path);
-                break;
-                
-            case 'pdf':
-                if (!$partition->pdf_path || !Storage::disk('public')->exists($partition->pdf_path)) {
-                    return response()->json(['success' => false, 'message' => 'PDF file not found.'], 404);
-                }
-                $path = Storage::disk('public')->path($partition->pdf_path);
-                $filename = basename($partition->pdf_path);
-                break;
-                
-            case 'image':
-                if (!$partition->image_path || !Storage::disk('public')->exists($partition->image_path)) {
-                    return response()->json(['success' => false, 'message' => 'Image file not found.'], 404);
-                }
-                $path = Storage::disk('public')->path($partition->image_path);
-                $filename = basename($partition->image_path);
-                break;
-                
-            default:
-                return response()->json(['success' => false, 'message' => 'Invalid file type.'], 400);
+        if (!$partition->files || !isset($partition->files[$fileIndex])) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
         }
+
+        $item = $partition->files[$fileIndex];
+        // Gérer le cas où $item est un tableau ou une chaîne
+        $filePath = is_array($item) ? ($item['path'] ?? $item['name'] ?? '') : $item;
+        
+        if (empty($filePath) || !Storage::disk('public')->exists($filePath)) {
+            return response()->json(['success' => false, 'message' => 'File not found on server.'], 404);
+        }
+
+        $path = Storage::disk('public')->path($filePath);
+        $filename = basename($filePath);
 
         return Response::download($path, $filename);
     }

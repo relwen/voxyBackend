@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifier la Partition - VoXY Admin</title>
+    <title>Modifier la Partition - VoXY {{ Auth::user()->isAdmin() ? 'Admin' : 'Maestro' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .bg-primary { background: rgb(158, 2, 80); }
+        .text-primary { color: rgb(158, 2, 80); }
+        .bg-primary-gradient { background: linear-gradient(135deg, rgb(78, 13, 4), rgb(179, 5, 5), rgb(158, 2, 80)); }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Navigation -->
+<body class="bg-gray-50">
+    @if(Auth::user()->isMaestro())
+        @include('components.maestro-sidebar', ['user' => Auth::user(), 'chorale' => Auth::user()->chorale])
+    @else
+        <!-- Navigation Admin -->
     <nav class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -31,10 +40,7 @@
                         <a href="{{ route('admin.categories') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Catégories
                         </a>
-                        <a href="{{ route('admin.vocalises.index') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Vocalises
-                        </a>
-                    </div>
+                        </div>
                 </div>
                 <div class="flex items-center">
                     <span class="text-gray-700 mr-4">{{ Auth::user()->name }}</span>
@@ -48,8 +54,10 @@
             </div>
         </div>
     </nav>
+    @endif
 
     <!-- Contenu principal -->
+    <div class="{{ Auth::user()->isMaestro() ? 'lg:ml-64' : '' }}">
     <div class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="px-4 py-5 sm:px-6">
@@ -84,10 +92,13 @@
                 <div class="mb-6">
                     <label for="category_id" class="block text-sm font-medium text-gray-700">Catégorie *</label>
                     <select name="category_id" id="category_id" required
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('category_id') border-red-300 @enderror">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('category_id') border-red-300 @enderror"
+                            onchange="toggleMesseSelector(this)">
                         <option value="">Sélectionner une catégorie</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('category_id', $partition->category_id) == $category->id ? 'selected' : '' }}>
+                            <option value="{{ $category->id }}" 
+                                    data-name="{{ strtolower($category->name) }}"
+                                    {{ old('category_id', $partition->category_id) == $category->id ? 'selected' : '' }}>
                                 {{ $category->name }}
                             </option>
                         @endforeach
@@ -97,12 +108,31 @@
                     @enderror
                 </div>
 
+                <!-- Messe (affiché dynamiquement si catégorie = Messe) -->
+                <div class="mb-6" id="messe_selector" style="display: none;">
+                    <label for="messe_id" class="block text-sm font-medium text-gray-700">Messe</label>
+                    <select name="messe_id" id="messe_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('messe_id') border-red-300 @enderror">
+                        <option value="">Sélectionner une messe</option>
+                        @if(isset($messes) && $messes->isNotEmpty())
+                        @foreach($messes as $messe)
+                                <option value="{{ $messe->id }}" {{ old('messe_id', $partition->rubrique_section_id ?? $partition->messe_id ?? '') == $messe->id ? 'selected' : '' }}>
+                                {{ $messe->nom }}
+                            </option>
+                        @endforeach
+                        @endif
+                    </select>
+                    @error('messe_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
                 <!-- Chorale -->
                 <div class="mb-6">
                     <label for="chorale_id" class="block text-sm font-medium text-gray-700">Chorale *</label>
                     <select name="chorale_id" id="chorale_id" required
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('chorale_id') border-red-300 @enderror">
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('chorale_id') border-red-300 @enderror"
+                            onchange="loadPupitres(this.value)">
                         <option value="">Sélectionner une chorale</option>
                         @foreach($chorales as $chorale)
                             <option value="{{ $chorale->id }}" {{ old('chorale_id', $partition->chorale_id) == $chorale->id ? 'selected' : '' }}>
@@ -115,89 +145,190 @@
                     @enderror
                 </div>
 
+                <!-- Pupitre (chargé dynamiquement selon la chorale) -->
+                <div class="mb-6">
+                    <label for="pupitre_id" class="block text-sm font-medium text-gray-700">Pupitre</label>
+                    <select name="pupitre_id" id="pupitre_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('pupitre_id') border-red-300 @enderror">
+                        <option value="">Chargement...</option>
+                        @if($pupitres && $pupitres->isNotEmpty())
+                            @foreach($pupitres as $pupitre)
+                                <option value="{{ $pupitre->id }}" {{ old('pupitre_id', $partition->pupitre_id) == $pupitre->id ? 'selected' : '' }}>
+                                    {{ $pupitre->nom }}@if($pupitre->is_default) (Par défaut)@endif
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <p class="mt-2 text-sm text-gray-500">Sélectionnez le pupitre concerné. Le pupitre par défaut sera utilisé si aucun n'est sélectionné.</p>
+                    @error('pupitre_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Fichiers actuels -->
-                @if($partition->audio_files || $partition->pdf_files || $partition->image_files)
+                @if($partition->files && count($partition->files) > 0)
                 <div class="mb-6">
                     <h4 class="text-sm font-medium text-gray-700 mb-3">Fichiers actuels</h4>
                     <div class="bg-gray-50 p-4 rounded-md">
-                        @if($partition->audio_files && count($partition->audio_files) > 0)
-                            <div class="mb-2">
-                                <span class="text-sm font-medium text-gray-600">Fichiers Audio:</span>
-                                <ul class="ml-4 text-sm text-gray-500">
-                                    @foreach($partition->audio_files as $audio)
-                                        <li>• {{ basename($audio) }}</li>
-                                    @endforeach
-                                </ul>
+                        @php
+                            $filesWithMetadata = $partition->files_with_metadata ?? [];
+                        @endphp
+                        @foreach($filesWithMetadata as $index => $file)
+                            <div class="mb-2 flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas {{ $file['icon'] ?? 'fa-file' }} mr-2 {{ $file['color_class'] ?? '' }}"></i>
+                                    <span class="text-sm text-gray-600">{{ $file['name'] ?? basename($file['path']) }}</span>
+                                    <span class="ml-2 text-xs text-gray-500">({{ $file['type_label'] ?? 'Fichier' }})</span>
                             </div>
-                        @endif
-                        @if($partition->pdf_files && count($partition->pdf_files) > 0)
-                            <div class="mb-2">
-                                <span class="text-sm font-medium text-gray-600">Fichiers PDF:</span>
-                                <ul class="ml-4 text-sm text-gray-500">
-                                    @foreach($partition->pdf_files as $pdf)
-                                        <li>• {{ basename($pdf) }}</li>
-                                    @endforeach
-                                </ul>
+                                <label class="flex items-center text-sm text-red-600 cursor-pointer">
+                                    <input type="checkbox" name="remove_files[]" value="{{ $index }}" class="mr-1">
+                                    Supprimer
+                                </label>
                             </div>
-                        @endif
-                        @if($partition->image_files && count($partition->image_files) > 0)
-                            <div class="mb-2">
-                                <span class="text-sm font-medium text-gray-600">Images:</span>
-                                <ul class="ml-4 text-sm text-gray-500">
-                                    @foreach($partition->image_files as $image)
-                                        <li>• {{ basename($image) }}</li>
                                     @endforeach
-                                </ul>
-                            </div>
-                        @endif
                     </div>
-                    <p class="mt-2 text-sm text-gray-500">Les nouveaux fichiers remplaceront les fichiers existants.</p>
+                    <p class="mt-2 text-sm text-gray-500">Cochez les fichiers à supprimer. Les nouveaux fichiers seront ajoutés aux fichiers existants.</p>
                 </div>
                 @endif
 
-                <!-- Nouveaux Fichiers Audio -->
+                <!-- Nouveaux fichiers -->
                 <div class="mb-6">
-                    <label for="audio_files" class="block text-sm font-medium text-gray-700">Nouveaux Fichiers Audio</label>
-                    <input type="file" name="audio_files[]" id="audio_files" multiple accept="audio/*"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('audio_files.*') border-red-300 @enderror">
-                    <p class="mt-2 text-sm text-gray-500">Formats acceptés: MP3, WAV, OGG, M4A (max 10MB par fichier)</p>
-                    @error('audio_files.*')
+                    <label for="files" class="block text-sm font-medium text-gray-700">
+                        Ajouter de nouveaux fichiers <span class="text-blue-600">(Vous pouvez sélectionner plusieurs fichiers)</span>
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition-colors">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="files" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>Sélectionner des fichiers</span>
+                                    <input type="file" name="files[]" id="files" multiple
+                                           class="sr-only"
+                                           onchange="updateFileList(this)">
+                                </label>
+                                <p class="pl-1">ou glissez-déposez</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                Formats: Audio (MP3, WAV, OGG, M4A), PDF, Images (JPEG, PNG, GIF, WEBP), Vidéos (MP4, AVI), Documents (DOC, DOCX, XLS, XLSX)
+                            </p>
+                            <p class="text-xs text-gray-500">Max 20MB par fichier</p>
+                        </div>
+                    </div>
+                    <div id="fileList" class="mt-3 space-y-2"></div>
+                    @error('files.*')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <!-- Nouveaux Fichiers PDF -->
-                <div class="mb-6">
-                    <label for="pdf_files" class="block text-sm font-medium text-gray-700">Nouveaux Fichiers PDF</label>
-                    <input type="file" name="pdf_files[]" id="pdf_files" multiple accept=".pdf"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('pdf_files.*') border-red-300 @enderror">
-                    <p class="mt-2 text-sm text-gray-500">Format accepté: PDF (max 20MB par fichier)</p>
-                    @error('pdf_files.*')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                <script>
+                function updateFileList(input) {
+                    const fileList = document.getElementById('fileList');
+                    fileList.innerHTML = '';
+                    
+                    if (input.files.length > 0) {
+                        const list = document.createElement('ul');
+                        list.className = 'bg-gray-50 rounded-md p-3 space-y-2';
+                        
+                        for (let i = 0; i < input.files.length; i++) {
+                            const file = input.files[i];
+                            const li = document.createElement('li');
+                            li.className = 'flex items-center justify-between text-sm';
+                            
+                            const fileInfo = document.createElement('span');
+                            fileInfo.className = 'text-gray-700';
+                            fileInfo.innerHTML = `<i class="fas fa-file mr-2"></i>${file.name} <span class="text-gray-500">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>`;
+                            
+                            li.appendChild(fileInfo);
+                            list.appendChild(li);
+                        }
+                        
+                        fileList.appendChild(list);
+                    }
+                }
 
-                <!-- Nouvelles Images -->
-                <div class="mb-6">
-                    <label for="image_files" class="block text-sm font-medium text-gray-700">Nouvelles Images</label>
-                    <input type="file" name="image_files[]" id="image_files" multiple accept="image/*"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('image_files.*') border-red-300 @enderror">
-                    <p class="mt-2 text-sm text-gray-500">Formats acceptés: JPEG, PNG, JPG, GIF (max 5MB par fichier)</p>
-                    @error('image_files.*')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                function toggleMesseSelector(select) {
+                    const messeSelector = document.getElementById('messe_selector');
+                    const selectedOption = select.options[select.selectedIndex];
+                    const categoryName = selectedOption ? selectedOption.getAttribute('data-name') : '';
+                    
+                    // Afficher le sélecteur de messe si la catégorie est "Messe" ou "Messes"
+                    if (categoryName && (categoryName.includes('messe') || categoryName.includes('messes'))) {
+                        messeSelector.style.display = 'block';
+                        document.getElementById('messe_id').setAttribute('required', 'required');
+                    } else {
+                        messeSelector.style.display = 'none';
+                        document.getElementById('messe_id').removeAttribute('required');
+                        document.getElementById('messe_id').value = '';
+                    }
+                }
+
+                // Vérifier au chargement de la page si une catégorie est déjà sélectionnée
+                document.addEventListener('DOMContentLoaded', function() {
+                    const categorySelect = document.getElementById('category_id');
+                    if (categorySelect.value) {
+                        toggleMesseSelector(categorySelect);
+                    }
+                    
+                    // Charger les pupitres si une chorale est déjà sélectionnée
+                    const choraleSelect = document.getElementById('chorale_id');
+                    if (choraleSelect.value) {
+                        loadPupitres(choraleSelect.value);
+                    }
+                });
+
+                // Charger les pupitres d'une chorale
+                function loadPupitres(choraleId) {
+                    const pupitreSelect = document.getElementById('pupitre_id');
+                    pupitreSelect.innerHTML = '<option value="">Chargement...</option>';
+                    
+                    if (!choraleId) {
+                        pupitreSelect.innerHTML = '<option value="">Sélectionner d\'abord une chorale</option>';
+                        return;
+                    }
+                    
+                    fetch(`/api/chorales/${choraleId}/pupitres`)
+                        .then(res => res.json())
+                        .then(data => {
+                            pupitreSelect.innerHTML = '<option value="">Sélectionner un pupitre (optionnel)</option>';
+                            if (data.success && data.data) {
+                                const currentPupitreId = '{{ old("pupitre_id", $partition->pupitre_id ?? "") }}';
+                                data.data.forEach(pupitre => {
+                                    const option = document.createElement('option');
+                                    option.value = pupitre.id;
+                                    option.textContent = pupitre.nom + (pupitre.is_default ? ' (Par défaut)' : '');
+                                    if (pupitre.id == currentPupitreId || (pupitre.is_default && !currentPupitreId)) {
+                                        option.selected = true;
+                                    }
+                                    pupitreSelect.appendChild(option);
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erreur lors du chargement des pupitres:', err);
+                            pupitreSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                        });
+                }
+                </script>
 
                 <!-- Boutons -->
                 <div class="flex justify-end space-x-3">
+                    @if(Auth::user()->isMaestro() && $partition->category)
+                        <a href="{{ route('admin.rubriques.show', $partition->category->id) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium">
+                            Annuler
+                        </a>
+                    @else
                     <a href="{{ route('admin.partitions') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium">
                         Annuler
                     </a>
+                    @endif
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
                         Mettre à jour
                     </button>
                 </div>
             </form>
+        </div>
         </div>
     </div>
 

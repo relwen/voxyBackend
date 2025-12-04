@@ -104,4 +104,18 @@ class ChoraleController extends Controller
             'message' => 'Chorale supprimée avec succès'
         ]);
     }
+
+    /**
+     * Récupérer les pupitres d'une chorale
+     */
+    public function getPupitres(string $id)
+    {
+        $chorale = Chorale::findOrFail($id);
+        $pupitres = $chorale->pupitres;
+
+        return response()->json([
+            'success' => true,
+            'data' => $pupitres
+        ]);
+    }
 }

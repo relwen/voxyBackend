@@ -9,7 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(
+177deg, #991b1b 0%, #7b1b4b 100%);
         }
         .glass-effect {
             backdrop-filter: blur(20px);
@@ -65,6 +66,12 @@
             </h2>
             <p class="text-white/80 text-lg">
                 Plateforme de gestion de chorales
+            </p>
+            <p class="mt-2 text-white/60 text-sm">
+                Maestro de chorale ? <a href="{{ route('login.maestro') }}" class="text-white hover:underline font-medium">Connectez-vous ici</a>
+            </p>
+            <p class="mt-1 text-white/50 text-xs">
+                Pas encore de chorale ? <a href="{{ route('register.chorale') }}" class="text-white hover:underline">Créez votre chorale</a>
             </p>
         </div>
         

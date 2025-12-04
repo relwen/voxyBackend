@@ -121,7 +121,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Liste des Partitions</h3>
                         <p class="text-sm text-gray-600">Créer et gérer les partitions</p>
                     </div>
-                    <a href="{{ route('admin.partitions.create') }}" class="bg-primary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <a href="{{ route('admin.partitions.create') }}" class="relative z-10 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center cursor-pointer">
                         <i class="fas fa-plus mr-2"></i>Nouvelle Partition
                     </a>
                 </div>
@@ -166,21 +166,24 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex space-x-1">
-                                        @if($partition->audio_files && count($partition->audio_files) > 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                <i class="fas fa-music mr-1"></i>{{ count($partition->audio_files) }}
-                                            </span>
-                                        @endif
-                                        @if($partition->pdf_files && count($partition->pdf_files) > 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
-                                                <i class="fas fa-file-pdf mr-1"></i>{{ count($partition->pdf_files) }}
-                                            </span>
-                                        @endif
-                                        @if($partition->image_files && count($partition->image_files) > 0)
-                                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                <i class="fas fa-image mr-1"></i>{{ count($partition->image_files) }}
-                                            </span>
+                                    <div class="flex flex-wrap gap-1">
+                                        @php
+                                            $filesByType = $partition->files_by_type ?? [];
+                                        @endphp
+                                        @foreach($filesByType as $type => $files)
+                                            @if(count($files) > 0)
+                                                @php
+                                                    $firstFile = $files[0];
+                                                    $icon = $firstFile['icon'] ?? 'fa-file';
+                                                    $colorClass = $firstFile['color_class'] ?? 'bg-gray-100 text-gray-800';
+                                                @endphp
+                                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $colorClass }}">
+                                                    <i class="fas {{ $icon }} mr-1"></i>{{ count($files) }}
+                                                </span>
+                                            @endif
+                                        @endforeach
+                                        @if(empty($filesByType) || (isset($filesByType['audio']) && count($filesByType['audio']) == 0 && isset($filesByType['pdf']) && count($filesByType['pdf']) == 0 && isset($filesByType['image']) && count($filesByType['image']) == 0))
+                                            <span class="text-gray-400 text-xs">Aucun fichier</span>
                                         @endif
                                     </div>
                                 </td>

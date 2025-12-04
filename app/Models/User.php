@@ -60,4 +60,28 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Chorale::class);
     }
+
+    /**
+     * Vérifier si l'utilisateur est administrateur
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Vérifier si l'utilisateur est maestro
+     */
+    public function isMaestro()
+    {
+        return $this->role === 'maestro';
+    }
+
+    /**
+     * Vérifier si l'utilisateur est maestro ou admin
+     */
+    public function isMaestroOrAdmin()
+    {
+        return $this->isAdmin() || $this->isMaestro();
+    }
 }

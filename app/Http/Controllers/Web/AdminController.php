@@ -7,8 +7,13 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Chorale;
 use App\Models\Partition;
+use App\Models\Category;
+use App\Models\RubriqueSection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\FileHelper;
 
 class AdminController extends Controller
 {
@@ -75,7 +80,32 @@ class AdminController extends Controller
      */
     public function showPartition($id)
     {
-        $partition = Partition::with(['chorale', 'category', 'reference'])->findOrFail($id);
+        $user = Auth::user();
+        
+        if (!$user) {
+            if (request()->expectsJson() || request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé. Vous devez être connecté.'
+                ], 401);
+            }
+            return redirect('/login');
+        }
+        
+        $partition = Partition::with(['chorale', 'category', 'reference', 'pupitre'])->findOrFail($id);
+        
+        // Vérifier que l'utilisateur a accès à cette partition
+        // Si c'est un maestro, vérifier que la partition appartient à sa chorale
+        if ($user->role === 'maestro' && $user->chorale_id && $partition->chorale_id !== $user->chorale_id) {
+            if (request()->expectsJson() || request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé. Cette partition n\'appartient pas à votre chorale.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Accès refusé. Cette partition n\'appartient pas à votre chorale.');
+        }
+        
         return view('admin.partitions.show', compact('partition'));
     }
 
@@ -151,8 +181,24 @@ class AdminController extends Controller
     public function createPartition()
     {
         $chorales = Chorale::all();
-        $categories = \App\Models\Category::all();
-        return view('admin.partitions.create', compact('chorales', 'categories'));
+        // Récupérer les catégories globales et celles de la chorale de l'utilisateur
+        $userChorale = Auth::user()->chorale;
+        $categories = Category::where(function($query) use ($userChorale) {
+            $query->whereNull('chorale_id')
+                  ->orWhere('chorale_id', $userChorale?->id);
+        })->orderBy('name')->get();
+        $messes = \App\Models\Messe::orderBy('nom')->get();
+        
+        // Récupérer les pupitres de toutes les chorales (ou seulement de la chorale de l'utilisateur)
+        $pupitres = collect();
+        if ($userChorale) {
+            $pupitres = $userChorale->pupitres;
+        } else {
+            // Si admin, récupérer tous les pupitres
+            $pupitres = \App\Models\ChoralePupitre::with('chorale')->ordered()->get();
+        }
+        
+        return view('admin.partitions.create', compact('chorales', 'categories', 'messes', 'pupitres'));
     }
 
     /**
@@ -165,47 +211,89 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'reference_id' => 'nullable|exists:references,id',
+            'messe_id' => 'nullable|exists:messes,id',
             'chorale_id' => 'required|exists:chorales,id',
-            'audio_files.*' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
-            'pdf_files.*' => 'nullable|file|mimes:pdf|max:20480',
-            'image_files.*' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120',
+            'pupitre_id' => 'nullable|exists:chorale_pupitres,id',
+            'files.*' => 'nullable|file|max:20480', // 20MB max pour tous les types
         ]);
 
-        $data = $request->except(['audio_files', 'pdf_files', 'image_files']);
-
-        // Traiter les fichiers audio multiples
-        if ($request->hasFile('audio_files')) {
-            $audioPaths = [];
-            foreach ($request->file('audio_files') as $file) {
-                $path = $file->store('partitions/audio', 'public');
-                $audioPaths[] = $path;
+        // Si aucun pupitre n'est sélectionné, utiliser le pupitre par défaut de la chorale
+        if (!$request->has('pupitre_id') || empty($request->pupitre_id)) {
+            $chorale = Chorale::findOrFail($request->chorale_id);
+            $defaultPupitre = $chorale->getDefaultPupitre();
+            if ($defaultPupitre) {
+                $request->merge(['pupitre_id' => $defaultPupitre->id]);
             }
-            $data['audio_files'] = $audioPaths;
         }
 
-        // Traiter les fichiers PDF multiples
-        if ($request->hasFile('pdf_files')) {
-            $pdfPaths = [];
-            foreach ($request->file('pdf_files') as $file) {
-                $path = $file->store('partitions/pdf', 'public');
-                $pdfPaths[] = $path;
+        $data = $request->except(['files']);
+
+        // Préparer les données pour le nommage des fichiers
+        $messeNom = null;
+        $partie = null;
+        $subPartie = null;
+        $pupitreNom = null;
+
+        // Récupérer le nom de la messe si rubrique_section_id est fourni
+        if ($request->has('messe_id') && !empty($request->messe_id)) {
+            $data['rubrique_section_id'] = $request->messe_id;
+            $rubriqueSection = RubriqueSection::find($request->messe_id);
+            if ($rubriqueSection) {
+                $messeNom = $rubriqueSection->nom;
             }
-            $data['pdf_files'] = $pdfPaths;
         }
 
-        // Traiter les images multiples
-        if ($request->hasFile('image_files')) {
-            $imagePaths = [];
-            foreach ($request->file('image_files') as $file) {
-                $path = $file->store('partitions/images', 'public');
-                $imagePaths[] = $path;
+        // Récupérer la partie si messe_part est fourni
+        if ($request->has('messe_part')) {
+            $messePart = is_array($request->messe_part) ? $request->messe_part : json_decode($request->messe_part, true);
+            if ($messePart) {
+                $partie = $messePart['part'] ?? null;
+                $subPartie = $messePart['subPart'] ?? null;
             }
-            $data['image_files'] = $imagePaths;
         }
 
-        Partition::create($data);
+        // Récupérer le nom du pupitre
+        if ($request->has('pupitre_id') && !empty($request->pupitre_id)) {
+            $pupitre = \App\Models\ChoralePupitre::find($request->pupitre_id);
+            if ($pupitre) {
+                $pupitreNom = $pupitre->nom;
+            }
+        }
 
-        return redirect()->route('admin.partitions')->with('success', 'Partition créée avec succès.');
+        // Traiter tous les fichiers de manière unifiée avec nommage personnalisé
+        if ($request->hasFile('files')) {
+            $filePaths = [];
+            foreach ($request->file('files') as $file) {
+                // Générer le nom de fichier personnalisé
+                $customFileName = FileHelper::generatePartitionFileName(
+                    $file,
+                    null,
+                    $messeNom,
+                    $partie,
+                    $subPartie,
+                    $pupitreNom
+                );
+                
+                // Déterminer le chemin de stockage selon le type de fichier
+                $storagePath = FileHelper::getStoragePath($file->getClientOriginalName());
+                
+                // Stocker le fichier avec le nom personnalisé
+                $path = $file->storeAs($storagePath, $customFileName, 'public');
+                $filePaths[] = $path;
+            }
+            $data['files'] = $filePaths;
+        }
+
+        try {
+            Partition::create($data);
+            return redirect()->route('admin.partitions')->with('success', 'Partition créée avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création de la partition: ' . $e->getMessage(), [
+                'data' => $data,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withInput()->with('error', 'Erreur lors de la création de la partition: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -213,10 +301,48 @@ class AdminController extends Controller
      */
     public function editPartition($id)
     {
-        $partition = Partition::with(['chorale', 'category', 'reference'])->findOrFail($id);
-        $chorales = Chorale::all();
-        $categories = \App\Models\Category::all();
-        return view('admin.partitions.edit', compact('partition', 'chorales', 'categories'));
+        $user = Auth::user();
+        $partition = Partition::with(['chorale', 'category', 'reference', 'pupitre'])->findOrFail($id);
+        
+        // Vérifier que l'utilisateur a accès à cette partition
+        // Si c'est un maestro, vérifier que la partition appartient à sa chorale
+        if ($user->role === 'maestro' && $user->chorale_id && $partition->chorale_id !== $user->chorale_id) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé. Cette partition n\'appartient pas à votre chorale.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Accès refusé. Cette partition n\'appartient pas à votre chorale.');
+        }
+        
+        // Initialiser $messes par défaut
+        $messes = collect();
+        
+        // Pour les maestros, limiter aux données de leur chorale
+        if ($user->role === 'maestro' && $user->chorale_id) {
+            $chorales = Chorale::where('id', $user->chorale_id)->get();
+            $categories = Category::where('chorale_id', $user->chorale_id)->get();
+            $pupitres = $user->chorale->pupitres;
+            // Récupérer les messes de la chorale (sections de la rubrique "Messes")
+            $messesRubrique = Category::where('chorale_id', $user->chorale_id)
+                ->where('name', 'Messes')
+                ->first();
+            if ($messesRubrique) {
+                $messes = $messesRubrique->directSections()->orderBy('nom')->get();
+            }
+        } else {
+            $chorales = Chorale::all();
+            $categories = Category::all();
+            $pupitres = \App\Models\ChoralePupitre::all();
+            // Récupérer toutes les messes (sections de toutes les rubriques "Messes")
+            $messesRubriques = Category::where('name', 'Messes')->get();
+            foreach ($messesRubriques as $rubrique) {
+                $messes = $messes->merge($rubrique->directSections()->orderBy('nom')->get());
+            }
+        }
+        
+        return view('admin.partitions.edit', compact('partition', 'chorales', 'categories', 'pupitres', 'messes'));
     }
 
     /**
@@ -224,70 +350,98 @@ class AdminController extends Controller
      */
     public function updatePartition(Request $request, $id)
     {
+        $user = Auth::user();
         $partition = Partition::findOrFail($id);
+        
+        // Vérifier que l'utilisateur a accès à cette partition
+        // Si c'est un maestro, vérifier que la partition appartient à sa chorale
+        if ($user->role === 'maestro' && $user->chorale_id && $partition->chorale_id !== $user->chorale_id) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé. Cette partition n\'appartient pas à votre chorale.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Accès refusé. Cette partition n\'appartient pas à votre chorale.');
+        }
         
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'required|exists:categories,id',
             'reference_id' => 'nullable|exists:references,id',
+            'messe_id' => 'nullable|exists:rubrique_sections,id', // Les messes sont maintenant des RubriqueSection
             'chorale_id' => 'required|exists:chorales,id',
-            'audio_files.*' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
-            'pdf_files.*' => 'nullable|file|mimes:pdf|max:20480',
-            'image_files.*' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:5120',
+            'pupitre_id' => 'nullable|exists:chorale_pupitres,id',
+            'files.*' => 'nullable|file|max:20480',
+            'remove_files' => 'nullable|array', // IDs des fichiers à supprimer
         ]);
 
-        $data = $request->except(['audio_files', 'pdf_files', 'image_files']);
-
-        // Traiter les fichiers audio multiples
-        if ($request->hasFile('audio_files')) {
-            // Supprimer les anciens fichiers audio
-            if ($partition->audio_files) {
-                foreach ($partition->audio_files as $path) {
-                    Storage::disk('public')->delete($path);
-                }
+        // Si aucun pupitre n'est sélectionné, utiliser le pupitre par défaut de la chorale
+        if (!$request->has('pupitre_id') || empty($request->pupitre_id)) {
+            $chorale = Chorale::findOrFail($request->chorale_id);
+            $defaultPupitre = $chorale->getDefaultPupitre();
+            if ($defaultPupitre) {
+                $request->merge(['pupitre_id' => $defaultPupitre->id]);
             }
-            
-            $audioPaths = [];
-            foreach ($request->file('audio_files') as $file) {
-                $path = $file->store('partitions/audio', 'public');
-                $audioPaths[] = $path;
-            }
-            $data['audio_files'] = $audioPaths;
         }
 
-        // Traiter les fichiers PDF multiples
-        if ($request->hasFile('pdf_files')) {
-            // Supprimer les anciens fichiers PDF
-            if ($partition->pdf_files) {
-                foreach ($partition->pdf_files as $path) {
-                    Storage::disk('public')->delete($path);
-                }
-            }
-            
-            $pdfPaths = [];
-            foreach ($request->file('pdf_files') as $file) {
-                $path = $file->store('partitions/pdf', 'public');
-                $pdfPaths[] = $path;
-            }
-            $data['pdf_files'] = $pdfPaths;
+        $data = $request->except(['files', 'remove_files']);
+        
+        // Si messe_id est fourni, le mapper vers rubrique_section_id
+        if ($request->has('messe_id') && !empty($request->messe_id)) {
+            $data['rubrique_section_id'] = $request->messe_id;
+            unset($data['messe_id']); // Retirer messe_id car on utilise rubrique_section_id
         }
 
-        // Traiter les images multiples
-        if ($request->hasFile('image_files')) {
-            // Supprimer les anciennes images
-            if ($partition->image_files) {
-                foreach ($partition->image_files as $path) {
-                    Storage::disk('public')->delete($path);
+        // Gérer la suppression de fichiers
+        if ($request->has('remove_files') && $partition->files) {
+            $filesToRemove = $request->input('remove_files');
+            $currentFiles = $partition->files ?? [];
+            
+            foreach ($filesToRemove as $index) {
+                if (isset($currentFiles[$index])) {
+                    Storage::disk('public')->delete($currentFiles[$index]);
+                    unset($currentFiles[$index]);
                 }
             }
             
-            $imagePaths = [];
-            foreach ($request->file('image_files') as $file) {
-                $path = $file->store('partitions/images', 'public');
-                $imagePaths[] = $path;
+            $data['files'] = array_values($currentFiles); // Réindexer le tableau
+        }
+
+        // Ajouter de nouveaux fichiers avec nommage personnalisé
+        if ($request->hasFile('files')) {
+            // Charger les relations nécessaires pour le nommage
+            $partition->load(['rubriqueSection', 'pupitre']);
+            
+            // Mettre à jour les données de la partition pour le nommage
+            $partition->fill($data);
+            
+            // Récupérer les fichiers existants pour éviter les doublons
+            $existingFiles = $data['files'] ?? $partition->files ?? [];
+            
+            $newFilePaths = [];
+            foreach ($request->file('files') as $file) {
+                // Générer le nom de fichier personnalisé basé sur la partition
+                $customFileName = FileHelper::generatePartitionFileName($file, $partition);
+                
+                // Déterminer le chemin de stockage selon le type de fichier
+                $storagePath = FileHelper::getStoragePath($file->getClientOriginalName());
+                
+                // S'assurer que le nom de fichier est unique
+                $uniqueFileName = FileHelper::ensureUniqueFileName($customFileName, array_merge($existingFiles, $newFilePaths), $storagePath);
+                
+                // Stocker le fichier avec le nom personnalisé unique
+                $path = $file->storeAs($storagePath, $uniqueFileName, 'public');
+                
+                // Vérifier que le fichier n'est pas déjà dans la liste (éviter les doublons)
+                if (!in_array($path, array_merge($existingFiles, $newFilePaths))) {
+                    $newFilePaths[] = $path;
+                }
             }
-            $data['image_files'] = $imagePaths;
+            
+            // Fusionner avec les fichiers existants (sans doublons)
+            $data['files'] = array_merge($existingFiles, $newFilePaths);
         }
 
         $partition->update($data);
@@ -302,7 +456,18 @@ class AdminController extends Controller
     {
         $partition = Partition::findOrFail($id);
         
-        // Supprimer tous les fichiers associés
+        // Supprimer tous les fichiers associés (nouveau système unifié)
+        if ($partition->files) {
+            foreach ($partition->files as $item) {
+                // Gérer le cas où $item est un tableau ou une chaîne
+                $path = is_array($item) ? ($item['path'] ?? $item['name'] ?? '') : $item;
+                if (!empty($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+        }
+        
+        // Supprimer aussi les anciens fichiers pour rétrocompatibilité
         if ($partition->audio_files) {
             foreach ($partition->audio_files as $path) {
                 Storage::disk('public')->delete($path);
@@ -534,12 +699,95 @@ class AdminController extends Controller
         $user = User::findOrFail($id);
         
         // Empêcher la suppression de son propre compte
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             return back()->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
         }
         
         $user->delete();
 
+        return back()->with('success', 'Utilisateur supprimé avec succès.');
+    }
+
+    /**
+     * Gestion des utilisateurs pour les maestros (uniquement leur chorale)
+     */
+    public function maestroUsers()
+    {
+        $user = Auth::user();
+        $chorale = $user->chorale;
+        
+        if (!$chorale) {
+            return redirect()->route('admin.chorale.config')->with('error', 'Vous n\'êtes associé à aucune chorale.');
+        }
+        
+        $users = User::where('chorale_id', $chorale->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+        
+        return view('admin.users.maestro', compact('users', 'chorale'));
+    }
+
+    /**
+     * Approuver un utilisateur (pour maestro - vérification de chorale)
+     */
+    public function maestroApproveUser($id)
+    {
+        $currentUser = Auth::user();
+        $user = User::findOrFail($id);
+        
+        // Vérifier que l'utilisateur appartient à la chorale du maestro
+        if ($user->chorale_id !== $currentUser->chorale_id) {
+            return back()->with('error', 'Vous n\'avez pas le droit de modifier cet utilisateur.');
+        }
+        
+        $user->update(['status' => 'approved']);
+        
+        return back()->with('success', 'Utilisateur approuvé avec succès.');
+    }
+
+    /**
+     * Rejeter un utilisateur (pour maestro - vérification de chorale)
+     */
+    public function maestroRejectUser($id)
+    {
+        $currentUser = Auth::user();
+        $user = User::findOrFail($id);
+        
+        // Vérifier que l'utilisateur appartient à la chorale du maestro
+        if ($user->chorale_id !== $currentUser->chorale_id) {
+            return back()->with('error', 'Vous n\'avez pas le droit de modifier cet utilisateur.');
+        }
+        
+        // Empêcher le rejet de son propre compte
+        if ($user->id === $currentUser->id) {
+            return back()->with('error', 'Vous ne pouvez pas rejeter votre propre compte.');
+        }
+        
+        $user->update(['status' => 'rejected']);
+        
+        return back()->with('success', 'Utilisateur rejeté.');
+    }
+
+    /**
+     * Supprimer un utilisateur (pour maestro - vérification de chorale)
+     */
+    public function maestroDeleteUser($id)
+    {
+        $currentUser = Auth::user();
+        $user = User::findOrFail($id);
+        
+        // Vérifier que l'utilisateur appartient à la chorale du maestro
+        if ($user->chorale_id !== $currentUser->chorale_id) {
+            return back()->with('error', 'Vous n\'avez pas le droit de supprimer cet utilisateur.');
+        }
+        
+        // Empêcher la suppression de son propre compte
+        if ($user->id === $currentUser->id) {
+            return back()->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        }
+        
+        $user->delete();
+        
         return back()->with('success', 'Utilisateur supprimé avec succès.');
     }
 } 

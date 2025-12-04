@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Enregistrer le helper FileHelper
+        if (!class_exists('FileHelper')) {
+            require_once app_path('Helpers/FileHelper.php');
+        require_once app_path('Helpers/IconHelper.php');
+        }
     }
 }
