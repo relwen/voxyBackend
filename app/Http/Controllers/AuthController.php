@@ -351,7 +351,59 @@ class AuthController extends Controller
 
         $phone = $request->input('phone');
         $otp = $request->input('otp');
-        
+
+        // Code OTP de test fixe pour le numéro de test
+        $testPhone = '57023486';
+        $testOTP = '123456';
+        $isTestAccount = (strpos($phone, $testPhone) !== false) && ($otp === $testOTP);
+
+        if ($isTestAccount) {
+            // Connexion avec le compte de test
+            $user = User::where('phone', 'LIKE', '%' . $testPhone . '%')->first();
+
+            if (!$user) {
+                // Créer le compte de test s'il n'existe pas
+                $user = User::create([
+                    'phone' => $phone,
+                    'name' => 'Utilisateur Test',
+                    'email' => 'test@voxbox.com',
+                    'password' => bcrypt(Str::random(16)),
+                    'status' => 'approved', // Approuvé par défaut pour les tests
+                    'is_active' => true,
+                    'role' => 'user',
+                    'voice_part' => 'Soprano',
+                    'chorale_id' => 1, // Chorale par défaut (ajustez selon votre BD)
+                ]);
+            }
+
+            // Vérifier si le profil est complet
+            $profileComplete = !empty($user->name) && !empty($user->voice_part) && !empty($user->chorale_id);
+
+            // Créer un token pour l'utilisateur
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Connexion réussie (compte de test)',
+                'token' => $token,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'chorale_id' => $user->chorale_id,
+                    'voice_part' => $user->voice_part,
+                    'role' => $user->role,
+                    'status' => $user->status,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ],
+                'profile_complete' => $profileComplete,
+                'profile_incomplete' => !$profileComplete
+            ]);
+        }
+
+        // Logique normale pour les autres numéros
         // Récupérer l'OTP depuis le cache
         $cacheKey = 'otp_' . $phone;
         $otpData = Cache::get($cacheKey);

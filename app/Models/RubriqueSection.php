@@ -41,6 +41,14 @@ class RubriqueSection extends Model
     }
 
     /**
+     * Relation avec les vocalises
+     */
+    public function vocalises()
+    {
+        return $this->hasMany(Vocalise::class, 'rubrique_section_id');
+    }
+
+    /**
      * Relation avec le dossier parent (si c'est une section dans un dossier)
      */
     public function dossier()

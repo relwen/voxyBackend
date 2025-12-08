@@ -41,6 +41,14 @@ class ChoralePupitre extends Model
     }
 
     /**
+     * Relation avec les vocalises
+     */
+    public function vocalises()
+    {
+        return $this->hasMany(Vocalise::class);
+    }
+
+    /**
      * Scope pour ordonner par ordre
      */
     public function scopeOrdered($query)

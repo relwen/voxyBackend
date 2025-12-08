@@ -9,8 +9,15 @@ use App\Http\Controllers\VoicePartController;
 use App\Http\Controllers\VocaliseController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Api\MesseController;
+use App\Http\Controllers\Api\ChantController;
+use App\Http\Controllers\Api\VocaliseController as ApiVocaliseController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\AppConfigController;
 
 // Public routes
+// App configuration (versions, maintenance, etc.)
+Route::get("/config", [AppConfigController::class, "getConfig"]);
+Route::post("/check-update", [AppConfigController::class, "checkUpdate"]);
 Route::post("/register", [AuthController::class, "register"]);
 Route::post("/login", [AuthController::class, "login"]);
 Route::post("/check-phone", [AuthController::class, "checkPhone"]);
@@ -49,6 +56,9 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("/chorales/{id}", [ChoraleController::class, "update"]);
     Route::delete("/chorales/{id}", [ChoraleController::class, "destroy"]);
 
+    // Search route (recherche globale)
+    Route::get("/search", [SearchController::class, "search"]);
+
     // Category routes
     Route::apiResource("categories", CategoryController::class);
 
@@ -72,8 +82,26 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::apiResource("messes", MesseController::class);
     Route::get("/messes/{id}/sections", [MesseController::class, "sections"]);
     Route::get("/references/{id}/partitions", [MesseController::class, "partitions"]);
-    
+
+    // Chant routes (partitions de la catégorie "Chants")
+    Route::get("/chants-de-messe", [ChantController::class, "index"]);
+    Route::get("/chants-de-messe/{id}", [ChantController::class, "show"]);
+
+    // Upload de fichiers pour les chants avec métadonnées de pupitre
+    Route::post("/chants/{id}/upload-file", [MesseController::class, "uploadFile"]);
+
     // Routes pour l'importation
     Route::delete("/messes/clear-all", [MesseController::class, "clearAll"]);
+
+    // Vocalise routes (nouveau système - basé sur RubriqueSection avec dossiers et parties)
+    Route::get("/vocalises-sections", [ApiVocaliseController::class, "index"]);
+    Route::post("/vocalises-sections", [ApiVocaliseController::class, "store"]);
+    Route::get("/vocalises-sections/{id}", [ApiVocaliseController::class, "show"]);
+    Route::put("/vocalises-sections/{id}", [ApiVocaliseController::class, "update"]);
+    Route::delete("/vocalises-sections/{id}", [ApiVocaliseController::class, "destroy"]);
+    Route::get("/vocalises-sections/{id}/vocalises", [ApiVocaliseController::class, "vocalises"]);
+    Route::post("/vocalises-sections/{id}/vocalises", [ApiVocaliseController::class, "storeVocalise"]);
+    Route::put("/vocalises-sections/{sectionId}/vocalises/{vocaliseId}", [ApiVocaliseController::class, "updateVocalise"]);
+    Route::delete("/vocalises-sections/{sectionId}/vocalises/{vocaliseId}", [ApiVocaliseController::class, "destroyVocalise"]);
 });
  

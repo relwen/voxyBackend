@@ -60,13 +60,18 @@ Route::middleware(['auth', 'maestro'])->group(function () {
     Route::get('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'showCategory'])->name('admin.chorale.categories.show');
     Route::put('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'updateCategory'])->name('admin.chorale.categories.update');
     Route::delete('/admin/chorale/categories/{id}', [App\Http\Controllers\Web\ChoraleConfigController::class, 'destroyCategory'])->name('admin.chorale.categories.destroy');
-    Route::post('/admin/chorale/apply-template', [App\Http\Controllers\Web\ChoraleConfigController::class, 'applyTemplate'])->name('admin.chorale.apply-template');
     
     // Gestion des rubriques et leurs sections
     Route::get('/admin/rubriques/{id}', [App\Http\Controllers\Web\RubriqueController::class, 'show'])->name('admin.rubriques.show');
     Route::get('/admin/rubriques/{rubriqueId}/messes/{messeId}', [App\Http\Controllers\Web\RubriqueController::class, 'showMesse'])->name('admin.rubriques.messes.show');
+    Route::get('/admin/rubriques/{rubriqueId}/vocalises/{vocaliseId}', [App\Http\Controllers\Web\RubriqueController::class, 'showVocalise'])->name('admin.rubriques.vocalises.show');
+    Route::get('/admin/rubriques/{rubriqueId}/chants/{chantId}', [App\Http\Controllers\Web\RubriqueController::class, 'showChant'])->name('admin.rubriques.chants.show');
     Route::post('/admin/rubriques/{id}/messes', [App\Http\Controllers\Web\RubriqueController::class, 'storeMesse'])->name('admin.rubriques.messes.store');
     Route::post('/admin/rubriques/{rubriqueId}/messes/{messeId}/partitions', [App\Http\Controllers\Web\RubriqueController::class, 'storePartitionForMessePart'])->name('admin.rubriques.messes.partitions.store');
+    Route::post('/admin/rubriques/{rubriqueId}/chants/{chantId}/partitions', [App\Http\Controllers\Web\RubriqueController::class, 'storePartitionForMessePart'])->name('admin.rubriques.chants.partitions.store');
+    Route::post('/admin/rubriques/{rubriqueId}/vocalises/{sectionId}/vocalises', [App\Http\Controllers\Web\RubriqueController::class, 'storeVocaliseForSectionPart'])->name('admin.rubriques.vocalises.store');
+    Route::put('/admin/rubriques/{rubriqueId}/vocalises/{sectionId}/vocalises/{vocaliseId}', [App\Http\Controllers\Web\RubriqueController::class, 'updateVocaliseForSectionPart'])->name('admin.rubriques.vocalises.update');
+    Route::delete('/admin/rubriques/{rubriqueId}/vocalises/{sectionId}/vocalises/{vocaliseId}', [App\Http\Controllers\Web\RubriqueController::class, 'destroyVocaliseForSectionPart'])->name('admin.rubriques.vocalises.destroy');
     Route::post('/admin/rubriques/{id}/sections', [App\Http\Controllers\Web\RubriqueController::class, 'storeSection'])->name('admin.rubriques.sections.store');
     Route::get('/admin/rubriques/{rubriqueId}/sections/{sectionId}', [App\Http\Controllers\Web\RubriqueController::class, 'showSection'])->name('admin.rubriques.sections.show');
     Route::put('/admin/rubriques/{rubriqueId}/sections/{sectionId}', [App\Http\Controllers\Web\RubriqueController::class, 'updateSection'])->name('admin.rubriques.sections.update');

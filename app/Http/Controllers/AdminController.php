@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Chorale;
+use App\Services\WhatsAppService;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -30,6 +32,15 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update(['status' => 'approved']);
+
+        // Envoyer une notification WhatsApp
+        try {
+            $whatsappService = new WhatsAppService();
+            $whatsappService->sendApprovalNotification($user);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de la notification WhatsApp: ' . $e->getMessage());
+            // Ne pas bloquer l'approbation si l'envoi WhatsApp échoue
+        }
 
         return response()->json([
             'success' => true,
@@ -117,7 +128,19 @@ class AdminController extends Controller
     public function activateUser($id)
     {
         $user = User::findOrFail($id);
+        $wasActive = $user->is_active;
         $user->update(['is_active' => true]);
+
+        // Envoyer une notification si l'utilisateur vient d'être activé et était approuvé
+        if (!$wasActive && $user->status === 'approved') {
+            try {
+                $whatsappService = new WhatsAppService();
+                $whatsappService->sendApprovalNotification($user);
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de la notification: ' . $e->getMessage());
+                // Ne pas bloquer l'activation si l'envoi échoue
+            }
+        }
 
         return response()->json([
             'success' => true,

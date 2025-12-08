@@ -105,8 +105,18 @@ class AuthController extends Controller
             'name' => 'Vocalises',
             'description' => 'Rubrique pour les vocalises avec dossiers',
             'chorale_id' => $chorale->id,
-            'structure_type' => 'with_dossiers', // Pour permettre les dossiers récursifs
+            'structure_type' => 'with_sections', // Pour permettre les parties comme les messes
             'color' => '#2196F3',
+            'icon' => 'mic',
+        ]);
+
+        // Créer la rubrique "Chants" avec structure de sections (comme les messes)
+        Category::create([
+            'name' => 'Chants',
+            'description' => 'Rubrique pour les chants avec parties',
+            'chorale_id' => $chorale->id,
+            'structure_type' => 'with_sections', // Pour permettre les parties comme les messes
+            'color' => '#4CAF50',
             'icon' => 'music_note',
         ]);
 
@@ -191,6 +201,14 @@ class AuthController extends Controller
             ])->withInput($request->only('email'));
         }
 
+        // Vérifier que le compte est actif
+        if (!$user->is_active) {
+            Log::info('Login maestro échoué: compte désactivé', ['email' => $request->email]);
+            return back()->withErrors([
+                'email' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.',
+            ])->withInput($request->only('email'));
+        }
+
         // Vérifier le statut
         if ($user->status !== 'approved') {
             Log::info('Login maestro échoué: compte non approuvé', ['email' => $request->email, 'status' => $user->status]);
@@ -208,8 +226,11 @@ class AuthController extends Controller
         }
 
         // Vérifier que le maestro a une chorale
-        if (!$user->chorale) {
-            Log::info('Login maestro échoué: aucune chorale associée', ['email' => $request->email]);
+        if (!$user->chorale_id || !$user->chorale) {
+            Log::info('Login maestro échoué: aucune chorale associée', [
+                'email' => $request->email,
+                'chorale_id' => $user->chorale_id
+            ]);
             return back()->withErrors([
                 'email' => 'Aucune chorale associée à votre compte. Veuillez contacter l\'administrateur.',
             ])->withInput($request->only('email'));

@@ -72,6 +72,8 @@ class PartitionController extends Controller
             if ($messePart) {
                 $partie = $messePart['part'] ?? null;
                 $subPartie = $messePart['subPart'] ?? null;
+                // Mettre à jour $data avec le tableau décodé pour que Laravel le stocke correctement comme JSON
+                $data['messe_part'] = $messePart;
             }
         }
 

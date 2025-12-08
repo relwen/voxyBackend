@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Chorale;
 use App\Models\ChoralePupitre;
-use App\Models\ChoraleTemplate;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,9 +26,8 @@ class ChoraleConfigController extends Controller
 
         $pupitres = $chorale->pupitres;
         $categories = $chorale->categories()->with('sections')->orderBy('name')->get();
-        $templates = ChoraleTemplate::where('is_system', true)->get();
 
-        return view('admin.chorales.config', compact('chorale', 'pupitres', 'categories', 'templates'));
+        return view('admin.chorales.config', compact('chorale', 'pupitres', 'categories'));
     }
 
     /**
@@ -285,37 +283,4 @@ class ChoraleConfigController extends Controller
         ]);
     }
 
-    /**
-     * Appliquer un template à la chorale
-     */
-    public function applyTemplate(Request $request)
-    {
-        $user = Auth::user();
-        $chorale = $user->chorale;
-        
-        if (!$chorale) {
-            return response()->json(['success' => false, 'message' => 'Chorale non trouvée'], 404);
-        }
-
-        $request->validate([
-            'template_id' => 'required|exists:chorale_templates,id',
-        ]);
-
-        $template = ChoraleTemplate::findOrFail($request->template_id);
-        
-        try {
-            $template->applyToChorale($chorale->id);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Template appliqué avec succès'
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'application du template: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'application du template'
-            ], 500);
-        }
-    }
 }

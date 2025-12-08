@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $messe->nom }} - VoXY Maestro</title>
+    <title>{{ $chant->nom }} - VoXY Maestro</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -86,10 +86,10 @@
                     </a>
                     <div class="flex items-center">
                         <div class="icon-wrapper w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-church text-primary text-2xl"></i>
+                            <i class="fas fa-music text-primary text-2xl"></i>
                         </div>
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-800">{{ $messe->nom }}</h2>
+                            <h2 class="text-2xl font-bold text-gray-800">{{ $chant->nom }}</h2>
                             <p class="text-sm text-gray-600 mt-1">
                                 <i class="fas fa-folder text-gray-400 mr-1"></i>Rubrique: {{ $rubrique->name }}
                             </p>
@@ -106,10 +106,10 @@
                 </div>
             @endif
 
-            <!-- Structure de la messe avec ses parties -->
-            @if($messe->structure && count($messe->structure) > 0)
+            <!-- Structure du chant avec ses parties -->
+            @if($chant->structure && count($chant->structure) > 0)
                 <div class="space-y-6">
-                    @foreach($messe->structure as $partIndex => $part)
+                    @foreach($chant->structure as $partIndex => $part)
                         <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-l-4 border-primary">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center">
@@ -185,19 +185,19 @@
                     @endforeach
                 </div>
             @else
-                <!-- Messe sans parties - partitions directes -->
+                <!-- Chant sans parties - partitions directes -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-gray-900">Partitions de la messe</h3>
+                        <h3 class="text-xl font-semibold text-gray-900">Partitions du chant</h3>
                         <button @click="showPartitionModal = true; selectedPart = null; selectedSubPart = null; partitionForm.part = ''; partitionForm.subPart = '';" 
                                 class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
                             <i class="fas fa-plus mr-2"></i>Ajouter partition
                         </button>
                     </div>
                     
-                    @if($messe->partitions->count() > 0)
+                    @if($chant->partitions->count() > 0)
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            @foreach($messe->partitions as $partition)
+                            @foreach($chant->partitions as $partition)
                                 @include('admin.rubriques.partition-card', ['partition' => $partition])
                             @endforeach
                         </div>
@@ -206,7 +206,7 @@
                             <div class="icon-wrapper w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i class="fas fa-file-music text-gray-400 text-3xl"></i>
                             </div>
-                            <p class="text-gray-500">Aucune partition pour cette messe</p>
+                            <p class="text-gray-500">Aucune partition pour ce chant</p>
                         </div>
                     @endif
                 </div>
@@ -359,9 +359,9 @@
 
     <script>
         const rubriqueId = {{ $rubrique->id }};
-        const messeId = {{ $messe->id }};
+        const chantId = {{ $chant->id }};
 
-        // Fonction pour sauvegarder une partition pour une partie de messe
+        // Fonction pour sauvegarder une partition pour une partie de chant
         window.savePartitionForMesse = function() {
             const alpineComponent = Alpine.$data(document.querySelector('[x-data]'));
             const form = document.getElementById('partition-form');
@@ -392,7 +392,7 @@
                 formData.append('files[]', fileObj.file);
             });
             
-            fetch(`/admin/rubriques/${rubriqueId}/messes/${messeId}/partitions`, {
+            fetch(`/admin/rubriques/${rubriqueId}/chants/${chantId}/partitions`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

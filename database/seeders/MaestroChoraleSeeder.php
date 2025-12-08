@@ -26,12 +26,12 @@ class MaestroChoraleSeeder extends Seeder
         // Utiliser DB::table() pour contourner le cast 'hashed' du modèle User
         // et éviter le double hashage
         $userId = DB::table('users')->insertGetId([
-            'name' => 'Maestro Exemple',
+            'name' => 'Maestro Jacob',
             'email' => 'maestro@chorale.com',
             'password' => Hash::make('maestro123'),
             'role' => 'maestro',
             'status' => 'approved',
-            'phone' => '+33 1 23 45 67 90',
+            'phone' => '+22657023486',
             'chorale_id' => $chorale->id,
             'is_active' => true,
             'created_at' => now(),

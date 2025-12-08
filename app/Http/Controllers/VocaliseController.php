@@ -14,16 +14,16 @@ class VocaliseController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Vocalise::with('chorale');
+        $query = Vocalise::with(['chorale', 'pupitre']);
 
         // Filtrer par chorale si spécifié
         if ($request->has('chorale_id')) {
             $query->where('chorale_id', $request->chorale_id);
         }
 
-        // Filtrer par partie vocale si spécifié
-        if ($request->has('voice_part')) {
-            $query->where('voice_part', $request->voice_part);
+        // Filtrer par pupitre si spécifié
+        if ($request->has('pupitre_id')) {
+            $query->where('pupitre_id', $request->pupitre_id);
         }
 
         $vocalises = $query->orderBy('created_at', 'desc')->get();
@@ -39,7 +39,7 @@ class VocaliseController extends Controller
      */
     public function show($id)
     {
-        $vocalise = Vocalise::with('chorale')->find($id);
+        $vocalise = Vocalise::with(['chorale', 'pupitre'])->find($id);
 
         if (!$vocalise) {
             return response()->json([
@@ -62,10 +62,15 @@ class VocaliseController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'voice_part' => 'required|in:SOPRANE,TENOR,MEZOSOPRANE,ALTO,BASSE,BARITON',
+            'pupitre_id' => 'required|exists:chorale_pupitres,id',
             'chorale_id' => 'required|exists:chorales,id',
             'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
         ]);
+
+        // Vérifier que le pupitre appartient à la chorale
+        $pupitre = \App\Models\ChoralePupitre::where('id', $request->pupitre_id)
+            ->where('chorale_id', $request->chorale_id)
+            ->firstOrFail();
 
         $data = $request->except('audio_file');
         
@@ -78,7 +83,7 @@ class VocaliseController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $vocalise->load('chorale'),
+            'data' => $vocalise->load(['chorale', 'pupitre']),
             'message' => 'Vocalise créée avec succès'
         ], 201);
     }
@@ -100,10 +105,15 @@ class VocaliseController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'voice_part' => 'required|in:SOPRANE,TENOR,MEZOSOPRANE,ALTO,BASSE,BARITON',
+            'pupitre_id' => 'required|exists:chorale_pupitres,id',
             'chorale_id' => 'required|exists:chorales,id',
             'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
         ]);
+
+        // Vérifier que le pupitre appartient à la chorale
+        $pupitre = \App\Models\ChoralePupitre::where('id', $request->pupitre_id)
+            ->where('chorale_id', $request->chorale_id)
+            ->firstOrFail();
 
         $data = $request->except('audio_file');
         
@@ -121,7 +131,7 @@ class VocaliseController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $vocalise->load('chorale'),
+            'data' => $vocalise->load(['chorale', 'pupitre']),
             'message' => 'Vocalise mise à jour avec succès'
         ]);
     }
@@ -160,7 +170,7 @@ class VocaliseController extends Controller
     {
         $lastSync = $request->get('last_sync', '1970-01-01 00:00:00');
         
-        $vocalises = Vocalise::with('chorale')
+        $vocalises = Vocalise::with(['chorale', 'pupitre'])
             ->where('updated_at', '>', $lastSync)
             ->orderBy('updated_at', 'asc')
             ->get();

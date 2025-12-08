@@ -93,10 +93,10 @@
                     </div>
                 </div>
                 <div class="flex space-x-2">
-                    @if(strtolower($rubrique->name) === 'messes')
+                    @if(strtolower($rubrique->name) === 'messes' || strtolower($rubrique->name) === 'vocalises' || strtolower($rubrique->name) === 'chants')
                         <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
                                 class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                            <i class="fas fa-plus mr-2"></i>Nouvelle messe
+                            <i class="fas fa-plus mr-2"></i>Nouveau {{ strtolower($rubrique->name) === 'messes' ? 'messe' : (strtolower($rubrique->name) === 'vocalises' ? 'vocalise' : 'chant') }}
                         </button>
                     @else
                         @if($rubrique->hasDossiers())
@@ -196,6 +196,140 @@
                         @endforeach
                     </div>
                 @endif
+            @elseif(strtolower($rubrique->name) === 'chants')
+                <!-- Interface simplifiée pour les Chants -->
+                @if($rubrique->directSections->isEmpty())
+                    <div class="text-center py-12 bg-white rounded-lg shadow">
+                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-music"></i></div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun chant</h3>
+                        <p class="text-gray-500 mb-4">Commencez par créer un chant.</p>
+                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
+                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>Créer un chant
+                        </button>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($rubrique->directSections as $chant)
+                            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                            <i class="fas fa-music text-primary mr-2"></i>{{ $chant->nom }}
+                                        </h3>
+                                        @if($chant->structure && count($chant->structure) > 0)
+                                            <div class="mt-3 space-y-2">
+                                                <p class="text-sm font-medium text-gray-700">Parties :</p>
+                                                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                                    @foreach($chant->structure as $part)
+                                                        <li>{{ $part['nom'] }}
+                                                            @if(isset($part['subParts']) && count($part['subParts']) > 0)
+                                                                <ul class="list-disc list-inside ml-4 mt-1">
+                                                                    @foreach($part['subParts'] as $subPart)
+                                                                        <li>{{ $subPart['nom'] }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <a href="{{ route('admin.rubriques.chants.show', ['rubriqueId' => $rubrique->id, 'chantId' => $chant->id]) }}" 
+                                           class="text-primary hover:text-primary-dark bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg text-sm font-medium">
+                                            <i class="fas fa-folder-open mr-1"></i>Ouvrir
+                                        </a>
+                                        <button @click="editMesse({{ $chant->id }})" 
+                                                class="text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteMesse({{ $chant->id }})" 
+                                                class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                @if($chant->partitions->count() > 0)
+                                    <div class="mt-4 pt-4 border-t">
+                                        <p class="text-sm text-gray-600">
+                                            <i class="fas fa-file-music mr-1"></i>
+                                            {{ $chant->partitions->count() }} partition(s)
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            @elseif(strtolower($rubrique->name) === 'vocalises')
+                <!-- Interface simplifiée pour les Vocalises -->
+                @if($rubrique->directSections->isEmpty())
+                    <div class="text-center py-12 bg-white rounded-lg shadow">
+                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-music-note"></i></div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune vocalise</h3>
+                        <p class="text-gray-500 mb-4">Commencez par créer une vocalise.</p>
+                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
+                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-plus mr-2"></i>Créer une vocalise
+                        </button>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach($rubrique->directSections as $vocaliseSection)
+                            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                            <i class="fas fa-music-note text-primary mr-2"></i>{{ $vocaliseSection->nom }}
+                                        </h3>
+                                        @if($vocaliseSection->structure && count($vocaliseSection->structure) > 0)
+                                            <div class="mt-3 space-y-2">
+                                                <p class="text-sm font-medium text-gray-700">Parties :</p>
+                                                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                                    @foreach($vocaliseSection->structure as $part)
+                                                        <li>{{ $part['nom'] }}
+                                                            @if(isset($part['subParts']) && count($part['subParts']) > 0)
+                                                                <ul class="list-disc list-inside ml-4 mt-1">
+                                                                    @foreach($part['subParts'] as $subPart)
+                                                                        <li>{{ $subPart['nom'] }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            @endif
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <a href="{{ route('admin.rubriques.vocalises.show', ['rubriqueId' => $rubrique->id, 'vocaliseId' => $vocaliseSection->id]) }}" 
+                                           class="text-primary hover:text-primary-dark bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg text-sm font-medium">
+                                            <i class="fas fa-folder-open mr-1"></i>Ouvrir
+                                        </a>
+                                        <button @click="editMesse({{ $vocaliseSection->id }})" 
+                                                class="text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteMesse({{ $vocaliseSection->id }})" 
+                                                class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                @if($vocaliseSection->vocalises->count() > 0)
+                                    <div class="mt-4 pt-4 border-t">
+                                        <p class="text-sm text-gray-600">
+                                            <i class="fas fa-microphone mr-1"></i>
+                                            {{ $vocaliseSection->vocalises->count() }} vocalise(s)
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             @elseif($rubrique->structure_type === 'simple')
                 <!-- Structure simple : partitions directes -->
                 @if($rubrique->partitions->isEmpty())
@@ -230,7 +364,7 @@
                 @else
                     <div class="space-y-6">
                         @foreach($rubrique->dossiers as $dossier)
-                            <div class="bg-white rounded-lg shadow p-6">
+                            <div id="dossier-{{ $dossier->id }}" class="bg-white rounded-lg shadow p-6">
                                 <div class="flex items-center justify-between mb-4">
                                     <div>
                                         <h3 class="text-xl font-semibold text-gray-900 flex items-center">
@@ -284,7 +418,7 @@
                                     <div class="space-y-4">
                                         <!-- Afficher les sous-dossiers récursivement -->
                                         @foreach($sousDossiers as $sousDossier)
-                                            <div class="ml-4 border-l-2 border-yellow-300 pl-4">
+                                            <div id="dossier-{{ $sousDossier->id }}" class="ml-4 border-l-2 border-yellow-300 pl-4">
                                                 <div class="bg-yellow-50 rounded-lg shadow p-4">
                                                     <div class="flex items-center justify-between mb-3">
                                                         <div>
@@ -371,37 +505,37 @@
          @click.self="showMesseModal = false">
         <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900" x-text="window.editingMesseId ? 'Modifier la messe' : 'Créer une nouvelle messe'"></h3>
+                <h3 class="text-xl font-bold text-gray-900" x-text="window.editingMesseId ? ('Modifier le ' + (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'chants' ? 'chant' : 'messe'))) : ('Créer un nouveau ' + (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'chants' ? 'chant' : 'messe')))"></h3>
             </div>
             
             <form @submit.prevent="window.createMesse()" class="p-6 space-y-6">
-                <!-- Nom de la messe -->
+                <!-- Nom -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Nom de la messe <span class="text-red-500">*</span>
+                        Nom <span class="text-red-500">*</span>
                     </label>
                     <input type="text" 
                            x-model="messeForm.nom"
                            required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                           placeholder="Ex: Messe de Noël">
+                           :placeholder="'{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'Ex: Vocalise Do-Ré-Mi' : ('{{ strtolower($rubrique->name) }}' === 'chants' ? 'Ex: Chant de Noël' : 'Ex: Messe de Noël')">
                 </div>
 
-                <!-- Case à cocher : Cette messe a des parties -->
+                <!-- Case à cocher : Cette section a des parties -->
                 <div class="flex items-center">
                     <input type="checkbox" 
                            id="hasParts"
                            x-model="messeForm.hasParts"
                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                     <label for="hasParts" class="ml-2 block text-sm text-gray-700">
-                        Cette messe a des parties
+                        Cette {{ strtolower($rubrique->name) === 'vocalises' ? 'vocalise' : 'messe' }} a des parties
                     </label>
                 </div>
 
                 <!-- Formulaire pour les parties (affiché si hasParts est coché) -->
                 <div x-show="messeForm.hasParts" x-cloak class="space-y-4 border-t pt-4">
                     <div class="flex items-center justify-between">
-                        <label class="block text-sm font-medium text-gray-700">Parties de la messe</label>
+                        <label class="block text-sm font-medium text-gray-700">Parties</label>
                         <button type="button" 
                                 @click="addPart()"
                                 class="text-sm text-primary hover:text-primary-dark">
@@ -414,7 +548,7 @@
                             <div class="flex items-center space-x-2">
                                 <input type="text" 
                                        x-model="part.nom"
-                                       placeholder="Nom de la partie (ex: Kyrié)"
+                                       :placeholder="'{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'Nom de la partie (ex: Exercice 1)' : 'Nom de la partie (ex: Kyrié)'"
                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                                 <button type="button" 
                                         @click="removePart(index)"
@@ -471,8 +605,8 @@
                         Annuler
                     </button>
                     <button type="submit" 
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
-                            x-text="window.editingMesseId ? 'Modifier' : 'Créer la messe'">
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90">
+                        <span x-text="window.editingMesseId ? 'Modifier' : ('Créer la ' + ('{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : 'messe'))"></span>
                     </button>
                 </div>
             </form>
@@ -508,10 +642,17 @@
             }
             
             const isEdit = window.editingMesseId;
+            const isVocalises = {{ strtolower($rubrique->name) === 'vocalises' ? 'true' : 'false' }};
+            const isChants = {{ strtolower($rubrique->name) === 'chants' ? 'true' : 'false' }};
             const url = isEdit 
                 ? `/admin/rubriques/${rubriqueId}/sections/${window.editingMesseId}`
-                : `/admin/rubriques/${rubriqueId}/messes`;
+                : (isVocalises || isChants ? `/admin/rubriques/${rubriqueId}/sections` : `/admin/rubriques/${rubriqueId}/messes`);
             const method = isEdit ? 'PUT' : 'POST';
+            
+            // Pour les vocalises et chants, utiliser storeSection au lieu de storeMesse
+            if (!isEdit && (isVocalises || isChants)) {
+                formData.type = 'section';
+            }
             
             fetch(url, {
                 method: method,
@@ -748,5 +889,24 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    <script>
+        // Scroll vers l'élément si l'ancre est présente dans l'URL
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.hash) {
+                const element = document.querySelector(window.location.hash);
+                if (element) {
+                    setTimeout(() => {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Ajouter un highlight temporaire
+                        element.style.transition = 'box-shadow 0.3s';
+                        element.style.boxShadow = '0 0 0 3px rgba(158, 2, 80, 0.3)';
+                        setTimeout(() => {
+                            element.style.boxShadow = '';
+                        }, 2000);
+                    }, 300);
+                }
+            }
+        });
+    </script>
 </body>
 </html>

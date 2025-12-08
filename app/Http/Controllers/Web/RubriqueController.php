@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\RubriqueSection;
 use App\Models\Partition;
+use App\Models\Vocalise;
 use App\Models\ChoralePupitre;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,11 +39,17 @@ class RubriqueController extends Controller
                     'directSections.partitions.pupitre',
                     'partitions.pupitre'
                 ]);
-            } elseif ($rubrique->structure_type === 'with_sections' || strtolower($rubrique->name) === 'messes') {
-                $rubrique->load([
-                    'directSections.partitions.pupitre',
-                    'partitions.pupitre'
-                ]);
+            } elseif ($rubrique->structure_type === 'with_sections' || strtolower($rubrique->name) === 'messes' || strtolower($rubrique->name) === 'vocalises' || strtolower($rubrique->name) === 'chants') {
+                if (strtolower($rubrique->name) === 'vocalises') {
+                    $rubrique->load([
+                        'directSections.vocalises.pupitre',
+                    ]);
+                } else {
+                    $rubrique->load([
+                        'directSections.partitions.pupitre',
+                        'partitions.pupitre'
+                    ]);
+                }
             } else {
                 // Structure simple
                 $rubrique->load([
@@ -80,7 +87,7 @@ class RubriqueController extends Controller
 
         $messe = RubriqueSection::where('id', $messeId)
             ->where('category_id', $rubriqueId)
-            ->with(['partitions.pupitre'])
+            ->with(['partitions.pupitre', 'vocalises.pupitre'])
             ->firstOrFail();
 
         // Grouper les partitions par partie
@@ -329,6 +336,8 @@ class RubriqueController extends Controller
 
         // Gérer les fichiers avec nommage personnalisé
         $filePaths = [];
+        $processedFileNames = []; // Pour éviter les doublons
+        
         if ($request->hasFile('files')) {
             // Récupérer le nom du pupitre
             $pupitreNom = null;
@@ -353,9 +362,16 @@ class RubriqueController extends Controller
                 // Déterminer le chemin de stockage selon le type de fichier
                 $storagePath = \App\Helpers\FileHelper::getStoragePath($file->getClientOriginalName());
                 
+                // Vérifier si ce fichier n'a pas déjà été traité (éviter les doublons)
+                $fullPath = $storagePath . '/' . $customFileName;
+                if (in_array($fullPath, $processedFileNames)) {
+                    continue; // Ignorer les doublons
+                }
+                
                 // Stocker le fichier avec le nom personnalisé
                 $path = $file->storeAs($storagePath, $customFileName, 'public');
                 $filePaths[] = $path;
+                $processedFileNames[] = $fullPath;
             }
         }
 
@@ -414,6 +430,8 @@ class RubriqueController extends Controller
 
         // Gérer les fichiers avec nommage personnalisé
         $filePaths = [];
+        $processedFileNames = []; // Pour éviter les doublons
+        
         if ($request->hasFile('files')) {
             // Récupérer le nom du pupitre
             $pupitreNom = null;
@@ -438,9 +456,16 @@ class RubriqueController extends Controller
                 // Déterminer le chemin de stockage selon le type de fichier
                 $storagePath = \App\Helpers\FileHelper::getStoragePath($file->getClientOriginalName());
                 
+                // Vérifier si ce fichier n'a pas déjà été traité (éviter les doublons)
+                $fullPath = $storagePath . '/' . $customFileName;
+                if (in_array($fullPath, $processedFileNames)) {
+                    continue; // Ignorer les doublons
+                }
+                
                 // Stocker le fichier avec le nom personnalisé
                 $path = $file->storeAs($storagePath, $customFileName, 'public');
                 $filePaths[] = $path;
+                $processedFileNames[] = $fullPath;
             }
         }
 
@@ -505,6 +530,8 @@ class RubriqueController extends Controller
 
         // Gérer les fichiers avec nommage personnalisé
         $filePaths = [];
+        $processedFileNames = []; // Pour éviter les doublons
+        
         if ($request->hasFile('files')) {
             // Récupérer le nom du pupitre
             $pupitreNom = null;
@@ -529,9 +556,16 @@ class RubriqueController extends Controller
                 // Déterminer le chemin de stockage selon le type de fichier
                 $storagePath = \App\Helpers\FileHelper::getStoragePath($file->getClientOriginalName());
                 
+                // Vérifier si ce fichier n'a pas déjà été traité (éviter les doublons)
+                $fullPath = $storagePath . '/' . $customFileName;
+                if (in_array($fullPath, $processedFileNames)) {
+                    continue; // Ignorer les doublons
+                }
+                
                 // Stocker le fichier avec le nom personnalisé
                 $path = $file->storeAs($storagePath, $customFileName, 'public');
                 $filePaths[] = $path;
+                $processedFileNames[] = $fullPath;
             }
         }
 
@@ -568,5 +602,249 @@ class RubriqueController extends Controller
             ->firstOrFail();
 
         return response()->json($section);
+    }
+
+    /**
+     * Afficher les détails d'une vocalise avec ses parties
+     */
+    public function showVocalise($rubriqueId, $vocaliseId)
+    {
+        $user = Auth::user();
+        $chorale = $user->chorale;
+        
+        if (!$chorale) {
+            return redirect()->route('admin.chorale.config')->with('error', 'Vous n\'êtes associé à aucune chorale.');
+        }
+
+        $rubrique = Category::where('id', $rubriqueId)
+            ->where('chorale_id', $chorale->id)
+            ->firstOrFail();
+
+        $vocaliseSection = RubriqueSection::where('id', $vocaliseId)
+            ->where('category_id', $rubriqueId)
+            ->with(['vocalises.pupitre'])
+            ->firstOrFail();
+
+        // Grouper les vocalises par partie
+        $vocalisesByPart = [];
+        foreach ($vocaliseSection->vocalises as $vocalise) {
+            $vocalisePart = $vocalise->vocalise_part;
+            if ($vocalisePart && isset($vocalisePart['part'])) {
+                $partName = $vocalisePart['part'];
+                $subPartName = $vocalisePart['subPart'] ?? null;
+                $key = $subPartName ? "{$partName} > {$subPartName}" : $partName;
+                
+                if (!isset($vocalisesByPart[$key])) {
+                    $vocalisesByPart[$key] = [];
+                }
+                $vocalisesByPart[$key][] = $vocalise;
+            } else {
+                // Vocalises sans partie spécifiée
+                if (!isset($vocalisesByPart['Sans partie'])) {
+                    $vocalisesByPart['Sans partie'] = [];
+                }
+                $vocalisesByPart['Sans partie'][] = $vocalise;
+            }
+        }
+
+        $pupitres = $chorale->pupitres;
+
+        return view('admin.rubriques.vocalise-details', compact('rubrique', 'vocaliseSection', 'vocalisesByPart', 'pupitres'));
+    }
+
+    /**
+     * Afficher les détails d'un chant avec ses parties
+     */
+    public function showChant($rubriqueId, $chantId)
+    {
+        $user = Auth::user();
+        $chorale = $user->chorale;
+        
+        if (!$chorale) {
+            return redirect()->route('admin.chorale.config')->with('error', 'Vous n\'êtes associé à aucune chorale.');
+        }
+
+        $rubrique = Category::where('id', $rubriqueId)
+            ->where('chorale_id', $chorale->id)
+            ->firstOrFail();
+
+        $chant = RubriqueSection::where('id', $chantId)
+            ->where('category_id', $rubriqueId)
+            ->with(['partitions.pupitre'])
+            ->firstOrFail();
+
+        // Grouper les partitions par partie
+        $partitionsByPart = [];
+        foreach ($chant->partitions as $partition) {
+            $messePart = $partition->messe_part;
+            if ($messePart && isset($messePart['part'])) {
+                $partName = $messePart['part'];
+                $subPartName = $messePart['subPart'] ?? null;
+                $key = $subPartName ? "{$partName} > {$subPartName}" : $partName;
+                
+                if (!isset($partitionsByPart[$key])) {
+                    $partitionsByPart[$key] = [];
+                }
+                $partitionsByPart[$key][] = $partition;
+            } else {
+                // Partitions sans partie spécifiée
+                if (!isset($partitionsByPart['Sans partie'])) {
+                    $partitionsByPart['Sans partie'] = [];
+                }
+                $partitionsByPart['Sans partie'][] = $partition;
+            }
+        }
+
+        $pupitres = $chorale->pupitres;
+
+        return view('admin.rubriques.chant-details', compact('rubrique', 'chant', 'partitionsByPart', 'pupitres'));
+    }
+
+    /**
+     * Créer une vocalise dans une partie de section vocalise
+     */
+    public function storeVocaliseForSectionPart(Request $request, $rubriqueId, $sectionId)
+    {
+        $user = Auth::user();
+        $chorale = $user->chorale;
+        
+        $section = RubriqueSection::where('id', $sectionId)
+            ->whereHas('category', function($query) use ($chorale, $rubriqueId) {
+                $query->where('chorale_id', $chorale->id)
+                      ->where('id', $rubriqueId);
+            })
+            ->firstOrFail();
+
+        // Vérifier si la section a une structure (parties)
+        $hasStructure = $section->structure && count($section->structure) > 0;
+        
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'pupitre_id' => 'required|exists:chorale_pupitres,id',
+            'part' => $hasStructure ? 'required|string' : 'nullable|string',
+            'subPart' => 'nullable|string',
+            'audio_file' => 'required|file|mimes:mp3,wav,ogg,m4a|max:10240',
+        ]);
+
+        // Vérifier que le pupitre appartient à la chorale
+        $pupitre = ChoralePupitre::where('id', $request->pupitre_id)
+            ->where('chorale_id', $chorale->id)
+            ->firstOrFail();
+
+        // Gérer le fichier audio
+        $audioPath = null;
+        if ($request->hasFile('audio_file')) {
+            $audioPath = $request->file('audio_file')->store('vocalises', 'public');
+        }
+
+        // Préparer les données de la vocalise
+        $vocaliseData = [
+            'title' => $request->title,
+            'description' => $request->description,
+            'pupitre_id' => $request->pupitre_id,
+            'audio_path' => $audioPath,
+            'chorale_id' => $chorale->id,
+            'rubrique_section_id' => $section->id,
+        ];
+        
+        // Ajouter vocalise_part seulement si part est fourni
+        if ($request->has('part') && !empty($request->part)) {
+            $vocaliseData['vocalise_part'] = [
+                'part' => $request->part,
+                'subPart' => $request->subPart ?? null,
+            ];
+        }
+        
+        $vocalise = Vocalise::create($vocaliseData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vocalise créée avec succès',
+            'data' => $vocalise
+        ]);
+    }
+
+    /**
+     * Mettre à jour une vocalise
+     */
+    public function updateVocaliseForSectionPart(Request $request, $rubriqueId, $sectionId, $vocaliseId)
+    {
+        $vocalise = Vocalise::where('rubrique_section_id', $sectionId)
+            ->findOrFail($vocaliseId);
+        
+        $section = RubriqueSection::findOrFail($sectionId);
+        $hasStructure = $section->structure && count($section->structure) > 0;
+        
+        $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'pupitre_id' => 'sometimes|required|exists:chorale_pupitres,id',
+            'part' => $hasStructure ? 'nullable|string' : 'nullable|string',
+            'subPart' => 'nullable|string',
+            'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
+        ]);
+        
+        // Vérifier que le pupitre appartient à la chorale si fourni
+        if ($request->has('pupitre_id')) {
+            $user = Auth::user();
+            $chorale = $user->chorale;
+            ChoralePupitre::where('id', $request->pupitre_id)
+                ->where('chorale_id', $chorale->id)
+                ->firstOrFail();
+        }
+        
+        $data = $request->only(['title', 'description', 'pupitre_id']);
+        
+        // Gérer le fichier audio
+        if ($request->hasFile('audio_file')) {
+            // Supprimer l'ancien fichier s'il existe
+            if ($vocalise->audio_path) {
+                Storage::disk('public')->delete($vocalise->audio_path);
+            }
+            
+            $data['audio_path'] = $request->file('audio_file')->store('vocalises', 'public');
+        }
+        
+        // Mettre à jour vocalise_part si part est fourni
+        if ($request->has('part')) {
+            if (!empty($request->part)) {
+                $data['vocalise_part'] = [
+                    'part' => $request->part,
+                    'subPart' => $request->subPart ?? null,
+                ];
+            } else {
+                $data['vocalise_part'] = null;
+            }
+        }
+        
+        $vocalise->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vocalise mise à jour avec succès',
+            'data' => $vocalise
+        ]);
+    }
+
+    /**
+     * Supprimer une vocalise
+     */
+    public function destroyVocaliseForSectionPart($rubriqueId, $sectionId, $vocaliseId)
+    {
+        $vocalise = Vocalise::where('rubrique_section_id', $sectionId)
+            ->findOrFail($vocaliseId);
+        
+        // Supprimer le fichier audio s'il existe
+        if ($vocalise->audio_path) {
+            Storage::disk('public')->delete($vocalise->audio_path);
+        }
+        
+        $vocalise->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vocalise supprimée avec succès'
+        ]);
     }
 }

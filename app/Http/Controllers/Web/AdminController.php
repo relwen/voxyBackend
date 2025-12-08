@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\FileHelper;
+use App\Services\WhatsAppService;
 
 class AdminController extends Controller
 {
@@ -632,9 +633,18 @@ class AdminController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Vérifier si le statut change vers "approved" ou si is_active change vers true
+        $wasApproved = $user->status === 'approved';
+        $wasActive = $user->is_active;
+        
         $data = $request->except(['password_confirmation']);
         $data['is_approved'] = $request->has('is_approved');
         $data['is_active'] = $request->has('is_active');
+        
+        // Si is_approved est coché, mettre status à 'approved'
+        if ($data['is_approved']) {
+            $data['status'] = 'approved';
+        }
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
@@ -643,6 +653,20 @@ class AdminController extends Controller
         }
 
         $user->update($data);
+
+        // Envoyer une notification si le compte vient d'être approuvé ou activé
+        $justApproved = !$wasApproved && $user->status === 'approved';
+        $justActivated = !$wasActive && $user->is_active === true;
+        
+        if ($justApproved || $justActivated) {
+            try {
+                $whatsappService = new WhatsAppService();
+                $whatsappService->sendApprovalNotification($user);
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de la notification: ' . $e->getMessage());
+                // Ne pas bloquer la mise à jour si l'envoi échoue
+            }
+        }
 
         return redirect()->route('admin.users')->with('success', 'Utilisateur mis à jour avec succès.');
     }
@@ -654,6 +678,15 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update(['status' => 'approved']);
+
+        // Envoyer une notification WhatsApp
+        try {
+            $whatsappService = new WhatsAppService();
+            $whatsappService->sendApprovalNotification($user);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de la notification WhatsApp: ' . $e->getMessage());
+            // Ne pas bloquer l'approbation si l'envoi WhatsApp échoue
+        }
 
         return back()->with('success', 'Utilisateur approuvé avec succès.');
     }
@@ -675,7 +708,19 @@ class AdminController extends Controller
     public function activateUser($id)
     {
         $user = User::findOrFail($id);
+        $wasActive = $user->is_active;
         $user->update(['is_active' => true]);
+
+        // Envoyer une notification si l'utilisateur vient d'être activé et était approuvé
+        if (!$wasActive && $user->status === 'approved') {
+            try {
+                $whatsappService = new WhatsAppService();
+                $whatsappService->sendApprovalNotification($user);
+            } catch (\Exception $e) {
+                Log::error('Erreur lors de l\'envoi de la notification: ' . $e->getMessage());
+                // Ne pas bloquer l'activation si l'envoi échoue
+            }
+        }
 
         return back()->with('success', 'Utilisateur activé avec succès.');
     }
@@ -741,6 +786,15 @@ class AdminController extends Controller
         }
         
         $user->update(['status' => 'approved']);
+        
+        // Envoyer une notification WhatsApp
+        try {
+            $whatsappService = new WhatsAppService();
+            $whatsappService->sendApprovalNotification($user);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de la notification WhatsApp: ' . $e->getMessage());
+            // Ne pas bloquer l'approbation si l'envoi WhatsApp échoue
+        }
         
         return back()->with('success', 'Utilisateur approuvé avec succès.');
     }

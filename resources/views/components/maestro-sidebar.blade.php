@@ -6,7 +6,13 @@
         $chorale = $user->chorale;
     }
     if (!isset($rubriques)) {
-        $rubriques = $chorale ? $chorale->categories()->with(['directSections.partitions', 'sections.partitions'])->orderBy('name')->get() : collect();
+        $rubriques = $chorale ? $chorale->categories()->with([
+            'directSections.partitions', 
+            'directSections.vocalises', // Pour les vocalises
+            'sections.partitions',
+            'dossiers.sections.partitions',
+            'dossiers.sections.sections'
+        ])->orderBy('name')->get() : collect();
     }
 @endphp
 
@@ -68,42 +74,120 @@
                                 <i class="fas fa-chevron-down text-xs transition-transform" :class="open ? 'transform rotate-180' : ''"></i>
                             </button>
                             
-                            <div x-show="open" x-collapse class="ml-4 mt-1 space-y-1">
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 transform -translate-y-1"
+                                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                                 x-transition:leave-end="opacity-0 transform -translate-y-1"
+                                 class="ml-4 mt-1 space-y-1">
                                 <a href="{{ route('admin.rubriques.show', $rubrique->id) }}" 
                                    class="flex items-center px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors {{ $isActive ? 'bg-gray-50 text-primary' : '' }}">
                                     <i class="fas fa-list w-4 h-4 mr-2"></i>Toutes les sections
                                 </a>
                                 @php
-                                    // Pour la rubrique "Messes", utiliser directSections (les messes)
+                                    // Pour la rubrique "Messes", "Vocalises" et "Chants", utiliser directSections
+                                    // Pour les rubriques avec dossiers, afficher les dossiers
                                     // Pour les autres, utiliser sections
                                     $isMesses = strtolower($rubrique->name) === 'messes';
-                                    $sectionsToShow = $isMesses ? $rubrique->directSections->take(10) : $rubrique->sections->take(10);
+                                    $isVocalises = strtolower($rubrique->name) === 'vocalises';
+                                    $isChants = strtolower($rubrique->name) === 'chants';
+                                    $hasDossiers = $rubrique->hasDossiers();
                                 @endphp
-                                @foreach($sectionsToShow as $section)
-                                    @if($isMesses)
-                                        {{-- Lien vers la page de détails de la messe --}}
-                                        <a href="{{ route('admin.rubriques.messes.show', ['rubriqueId' => $rubrique->id, 'messeId' => $section->id]) }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
-                                            <i class="fas fa-church w-4 h-4 mr-2"></i>{{ $section->nom }}
-                                            <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
-                                        </a>
-                                    @else
-                                        {{-- Lien vers la section dans la rubrique --}}
-                                        <a href="{{ route('admin.rubriques.show', $rubrique->id) }}#section-{{ $section->id }}" 
-                                           class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
-                                            <i class="fas fa-file-alt w-4 h-4 mr-2"></i>{{ $section->nom }}
-                                            <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
+                                
+                                @if($hasDossiers)
+                                    {{-- Afficher les dossiers --}}
+                                    @foreach($rubrique->dossiers->take(10) as $dossier)
+                                        <div x-data="{ dossierOpen: false }">
+                                            <button @click="dossierOpen = !dossierOpen" 
+                                                    class="w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <div class="flex items-center">
+                                                    <i class="fas fa-folder w-4 h-4 mr-2 text-yellow-500"></i>
+                                                    <span>{{ $dossier->nom }}</span>
+                                                </div>
+                                                <i class="fas fa-chevron-down text-xs transition-transform" :class="dossierOpen ? 'transform rotate-180' : ''"></i>
+                                            </button>
+                                            <div x-show="dossierOpen" 
+                                                 x-transition:enter="transition ease-out duration-200"
+                                                 x-transition:enter-start="opacity-0 transform -translate-y-1"
+                                                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                                                 x-transition:leave="transition ease-in duration-150"
+                                                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                                                 x-transition:leave-end="opacity-0 transform -translate-y-1"
+                                                 class="ml-4 mt-1 space-y-1">
+                                                <a href="{{ route('admin.rubriques.show', $rubrique->id) }}#dossier-{{ $dossier->id }}" 
+                                                   class="flex items-center px-4 py-2 text-xs text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                                                    <i class="fas fa-eye w-3 h-3 mr-2"></i>Ouvrir le dossier
+                                                </a>
+                                                @foreach($dossier->sections->where('type', 'section')->take(5) as $section)
+                                                    <a href="{{ route('admin.rubriques.show', $rubrique->id) }}#section-{{ $section->id }}" 
+                                                       class="flex items-center px-4 py-2 text-xs text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
+                                                        <i class="fas fa-file-alt w-3 h-3 mr-2"></i>{{ $section->nom }}
+                                                        <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
+                                                    </a>
+                                                @endforeach
+                                                @foreach($dossier->sections->where('type', 'dossier')->take(3) as $sousDossier)
+                                                    <a href="{{ route('admin.rubriques.show', $rubrique->id) }}#dossier-{{ $sousDossier->id }}" 
+                                                       class="flex items-center px-4 py-2 text-xs text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors">
+                                                        <i class="fas fa-folder w-3 h-3 mr-2"></i>{{ $sousDossier->nom }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    @if($rubrique->dossiers->count() > 10)
+                                        <a href="{{ route('admin.rubriques.show', $rubrique->id) }}" 
+                                           class="flex items-center px-4 py-2 text-sm text-primary rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-ellipsis-h w-4 h-4 mr-2"></i>Voir plus...
                                         </a>
                                     @endif
-                                @endforeach
-                                @php
-                                    $totalSections = $isMesses ? $rubrique->directSections->count() : $rubrique->sections->count();
-                                @endphp
-                                @if($totalSections > 10)
-                                    <a href="{{ route('admin.rubriques.show', $rubrique->id) }}" 
-                                       class="flex items-center px-4 py-2 text-sm text-primary rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-ellipsis-h w-4 h-4 mr-2"></i>Voir plus...
-                                    </a>
+                                @else
+                                    @php
+                                        // Pour Messes, Vocalises et Chants, utiliser directSections
+                                        $sectionsToShow = ($isMesses || $isVocalises || $isChants) ? $rubrique->directSections->take(10) : $rubrique->sections->take(10);
+                                    @endphp
+                                    @foreach($sectionsToShow as $section)
+                                        @if($isMesses)
+                                            {{-- Lien vers la page de détails de la messe --}}
+                                            <a href="{{ route('admin.rubriques.messes.show', ['rubriqueId' => $rubrique->id, 'messeId' => $section->id]) }}" 
+                                               class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <i class="fas fa-church w-4 h-4 mr-2"></i>{{ $section->nom }}
+                                                <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
+                                            </a>
+                                        @elseif($isVocalises)
+                                            {{-- Lien vers la page de détails de la vocalise --}}
+                                            <a href="{{ route('admin.rubriques.vocalises.show', ['rubriqueId' => $rubrique->id, 'vocaliseId' => $section->id]) }}" 
+                                               class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <i class="fas fa-music-note w-4 h-4 mr-2"></i>{{ $section->nom }}
+                                                <span class="ml-auto text-xs text-gray-400">{{ $section->vocalises->count() }}</span>
+                                            </a>
+                                        @elseif($isChants)
+                                            {{-- Lien vers la page de détails du chant --}}
+                                            <a href="{{ route('admin.rubriques.chants.show', ['rubriqueId' => $rubrique->id, 'chantId' => $section->id]) }}" 
+                                               class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <i class="fas fa-music w-4 h-4 mr-2"></i>{{ $section->nom }}
+                                                <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
+                                            </a>
+                                        @else
+                                            {{-- Lien vers la section dans la rubrique --}}
+                                            <a href="{{ route('admin.rubriques.show', $rubrique->id) }}#section-{{ $section->id }}" 
+                                               class="flex items-center px-4 py-2 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
+                                                <i class="fas fa-file-alt w-4 h-4 mr-2"></i>{{ $section->nom }}
+                                                <span class="ml-auto text-xs text-gray-400">{{ $section->partitions->count() }}</span>
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                    @php
+                                        // Pour Messes, Vocalises et Chants, utiliser directSections
+                                        $totalSections = ($isMesses || $isVocalises || $isChants) ? $rubrique->directSections->count() : $rubrique->sections->count();
+                                    @endphp
+                                    @if($totalSections > 10)
+                                        <a href="{{ route('admin.rubriques.show', $rubrique->id) }}" 
+                                           class="flex items-center px-4 py-2 text-sm text-primary rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-ellipsis-h w-4 h-4 mr-2"></i>Voir plus...
+                                        </a>
+                                    @endif
                                 @endif
                             </div>
                         </div>

@@ -14,25 +14,10 @@ class ChoraleSeeder extends Seeder
     {
         $chorales = [
             [
-                'name' => 'Chorale Saint-Michel',
-                'description' => 'Chorale paroissiale de la cathédrale Saint-Michel',
-                'location' => 'Paris, France'
+                'name' => 'St Camille 1200 logements',
+                'description' => 'La chorale des jeunes paroisse St Camille 1200 logements AD JESUM PER CANTICUM',
+                'location' => 'Ouagadougou, Burkina Faso'
             ],
-            [
-                'name' => 'Ensemble Vocal de Lyon',
-                'description' => 'Ensemble vocal professionnel de Lyon',
-                'location' => 'Lyon, France'
-            ],
-            [
-                'name' => 'Chorale Universitaire',
-                'description' => 'Chorale des étudiants de l\'université',
-                'location' => 'Marseille, France'
-            ],
-            [
-                'name' => 'Voix d\'Or',
-                'description' => 'Chorale amateur de chants traditionnels',
-                'location' => 'Toulouse, France'
-            ]
         ];
 
         foreach ($chorales as $chorale) {

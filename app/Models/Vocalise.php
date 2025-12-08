@@ -12,9 +12,23 @@ class Vocalise extends Model
     protected $fillable = [
         'title',
         'description',
-        'voice_part',
+        'pupitre_id',
         'audio_path',
         'chorale_id',
+        'rubrique_section_id',
+        'vocalise_part',
+    ];
+
+    /**
+     * Attributs à ajouter à la sérialisation JSON
+     */
+    protected $appends = ['audio_url'];
+
+    /**
+     * Les attributs qui doivent être castés.
+     */
+    protected $casts = [
+        'vocalise_part' => 'array',
     ];
 
     /**
@@ -23,6 +37,22 @@ class Vocalise extends Model
     public function chorale()
     {
         return $this->belongsTo(Chorale::class);
+    }
+
+    /**
+     * Relation avec la section de rubrique (dossier/section)
+     */
+    public function rubriqueSection()
+    {
+        return $this->belongsTo(RubriqueSection::class, 'rubrique_section_id');
+    }
+
+    /**
+     * Relation avec le pupitre
+     */
+    public function pupitre()
+    {
+        return $this->belongsTo(ChoralePupitre::class, 'pupitre_id');
     }
 
     /**
@@ -37,11 +67,11 @@ class Vocalise extends Model
     }
 
     /**
-     * Scope pour filtrer par partie vocale
+     * Scope pour filtrer par pupitre
      */
-    public function scopeForVoicePart($query, $voicePart)
+    public function scopeForPupitre($query, $pupitreId)
     {
-        return $query->where('voice_part', $voicePart);
+        return $query->where('pupitre_id', $pupitreId);
     }
 
     /**

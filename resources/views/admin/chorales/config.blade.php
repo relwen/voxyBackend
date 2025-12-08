@@ -85,11 +85,6 @@
                                 class="py-4 px-6 border-b-2 font-medium text-sm">
                             <i class="fas fa-tags mr-2"></i>Rubriques
                         </button>
-                        <button @click="activeTab = 'templates'" 
-                                :class="activeTab === 'templates' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                class="py-4 px-6 border-b-2 font-medium text-sm">
-                            <i class="fas fa-file-alt mr-2"></i>Templates
-                        </button>
                     </nav>
                 </div>
 
@@ -230,40 +225,6 @@
                         </div>
                     </div>
 
-                    <!-- Onglet Templates -->
-                    <div x-show="activeTab === 'templates'">
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Templates de Base</h3>
-                            <p class="text-gray-600 mb-6">Appliquez un template pour créer automatiquement les pupitres et rubriques de base.</p>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @foreach($templates as $template)
-                                <div class="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <h4 class="text-lg font-semibold text-gray-900">{{ $template->name }}</h4>
-                                        @if($template->is_system)
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Système</span>
-                                        @endif
-                                    </div>
-                                    @if($template->description)
-                                        <p class="text-sm text-gray-600 mb-4">{{ $template->description }}</p>
-                                    @endif
-                                    <div class="mb-4">
-                                        <p class="text-sm font-medium text-gray-700 mb-2">Contenu du template:</p>
-                                        <ul class="text-sm text-gray-600 space-y-1">
-                                            <li><i class="fas fa-users mr-2"></i>{{ count($template->default_pupitres ?? []) }} pupitres</li>
-                                            <li><i class="fas fa-tags mr-2"></i>{{ count($template->default_categories ?? []) }} rubriques</li>
-                                        </ul>
-                                    </div>
-                                    <button @click="applyTemplate({{ $template->id }})" 
-                                            class="w-full bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                        <i class="fas fa-check mr-2"></i>Appliquer ce template
-                                    </button>
-                                </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -565,28 +526,6 @@
             });
         }
 
-        function applyTemplate(templateId) {
-            if (!confirm('Appliquer ce template va créer les pupitres et rubriques de base. Continuer ?')) return;
-            
-            fetch('/admin/chorale/apply-template', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ template_id: templateId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Template appliqué avec succès !');
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de l\'application du template');
-                }
-            });
-        }
 
         function selectIcon(iconKey, iconName) {
             // Mettre à jour le champ caché

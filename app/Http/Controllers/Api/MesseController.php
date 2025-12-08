@@ -361,19 +361,19 @@ class MesseController extends Controller
     {
         $user = Auth::user();
         $choraleId = $user?->chorale_id;
-        
+
         if (!$choraleId) {
             return response()->json([
                 'success' => false,
                 'message' => 'Vous devez être associé à une chorale'
             ], 403);
         }
-        
+
         // Récupérer la rubrique "Messes"
         $messesRubrique = Category::where('name', 'Messes')
             ->where('chorale_id', $choraleId)
             ->first();
-        
+
         if ($messesRubrique) {
             // Supprimer toutes les partitions liées
             Partition::whereIn('rubrique_section_id', function($query) use ($messesRubrique) {
@@ -381,14 +381,136 @@ class MesseController extends Controller
                     ->from('rubrique_sections')
                     ->where('category_id', $messesRubrique->id);
             })->delete();
-            
+
             // Supprimer toutes les sections (messes)
             RubriqueSection::where('category_id', $messesRubrique->id)->delete();
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Toutes les messes ont été supprimées'
         ]);
+    }
+
+    /**
+     * Upload d'un fichier avec métadonnées de pupitre pour un chant
+     */
+    public function uploadFile(Request $request, $chantId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $choraleId = $user?->chorale_id;
+
+            if (!$choraleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous devez être associé à une chorale'
+                ], 403);
+            }
+
+            // Validation
+            $request->validate([
+                'pupitre' => 'required|string|in:soprano,alto,tenor,basse,tutti',
+                'file_type' => 'required|string|in:audio,image,pdf',
+                'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a,aac|max:10240',
+                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+                'pdf_file' => 'nullable|file|mimes:pdf|max:20480',
+            ]);
+
+            // Récupérer le chant (partition ou section)
+            // Pour simplifier, on cherche une partition avec rubrique_section_id = chantId
+            // Ou on crée une nouvelle partition pour ce chant
+
+            $pupitre = $request->input('pupitre');
+            $fileType = $request->input('file_type');
+
+            // Déterminer quel fichier uploader
+            $fileField = $fileType . '_file';
+            if (!$request->hasFile($fileField)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun fichier fourni'
+                ], 400);
+            }
+
+            $file = $request->file($fileField);
+
+            // Créer le chemin avec organisation par pupitre
+            // Format: chants/{chant_id}/{pupitre}/{file_type}/filename.ext
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $directory = "chants/{$chantId}/{$pupitre}/{$fileType}";
+
+            // Stocker le fichier
+            $path = $file->storeAs($directory, $fileName, 'public');
+
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'upload du fichier'
+                ], 500);
+            }
+
+            // Récupérer ou créer la partition pour ce chant et ce pupitre
+            $partition = Partition::firstOrCreate(
+                [
+                    'rubrique_section_id' => $chantId,
+                    'pupitre' => $pupitre,
+                    'chorale_id' => $choraleId,
+                ],
+                [
+                    'title' => "Fichiers $pupitre",
+                    'description' => "Fichiers pour le pupitre $pupitre",
+                    'files' => [],
+                ]
+            );
+
+            // Ajouter le fichier au tableau 'files' avec métadonnées
+            $files = $partition->files ?? [];
+            $files[] = [
+                'path' => $path,
+                'type' => $fileType,
+                'pupitre' => $pupitre,
+                'name' => $file->getClientOriginalName(),
+                'uploaded_at' => now()->toISOString(),
+            ];
+
+            $partition->files = $files;
+            $partition->save();
+
+            Log::info("Fichier uploadé avec succès", [
+                'chant_id' => $chantId,
+                'pupitre' => $pupitre,
+                'file_type' => $fileType,
+                'path' => $path,
+                'partition_id' => $partition->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fichier uploadé avec succès',
+                'data' => [
+                    'path' => $path,
+                    'url' => asset('storage/' . $path),
+                    'pupitre' => $pupitre,
+                    'file_type' => $fileType,
+                    'partition_id' => $partition->id,
+                ]
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'upload du fichier: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'upload: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
