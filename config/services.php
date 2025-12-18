@@ -36,9 +36,8 @@ return [
     ],
 
     'itsenda' => [
-        'app_key' => env('ITSENDA_APP_KEY', '70f208fb-0ebe-4f6c-9d01-84f572232c3d'),
-        'auth_key' => env('ITSENDA_AUTH_KEY', 'g960JBdmz8VjbVGD3xpJshDdYPVlbnJVsdUVgZsbVXOaK6YgBZ'),
-        'base_url' => env('ITSENDA_BASE_URL', 'https://itsenda.com/api'),
+        'bearer_token' => env('ITSENDA_BEARER_TOKEN', '4a09d11a8fd9559a591c16df9d04fa372cf99d258258016c7c6d467e667730fd'),
+        'base_url' => env('ITSENDA_BASE_URL', 'https://wasenderapi.com/api'),
     ],
 
     'whatsapp' => [

@@ -43,12 +43,14 @@ class AppConfigController extends Controller
 
     /**
      * Vérifier si une mise à jour est requise pour une version donnée
+     * Compare la version de l'app avec la version configurée sur le backend
      */
     public function checkUpdate(Request $request): JsonResponse
     {
         $platform = $request->input('platform', 'android'); // android ou ios
         $currentVersion = $request->input('version', '1.0.0');
 
+        // Récupérer les versions depuis la configuration backend
         $latestVersion = $platform === 'ios'
             ? env('VERSION_IOS', '1.0.0')
             : env('VERSION_ANDROID', '1.0.0');
@@ -57,17 +59,35 @@ class AppConfigController extends Controller
             ? env('MIN_VERSION_IOS', '1.0.0')
             : env('MIN_VERSION_ANDROID', '1.0.0');
 
-        $forceUpdate = $platform === 'ios'
-            ? env('FORCE_UPDATE_IOS', false)
-            : env('FORCE_UPDATE_ANDROID', false);
+        $forceUpdate = filter_var(
+            $platform === 'ios'
+                ? env('FORCE_UPDATE_IOS', false)
+                : env('FORCE_UPDATE_ANDROID', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
 
         $downloadUrl = $platform === 'ios'
             ? env('IOS_DOWNLOAD_URL', 'https://apps.apple.com/app/voxbox/id123456789')
             : env('ANDROID_DOWNLOAD_URL', 'https://play.google.com/store/apps/details?id=com.kuilingatech.voxbox.voxbox');
 
-        // Comparer les versions
+        // Comparer les versions : version_compare retourne -1 si version1 < version2
+        // Si la version backend (latestVersion) est supérieure à la version de l'app (currentVersion)
         $isUpdateAvailable = version_compare($currentVersion, $latestVersion, '<');
-        $isUpdateRequired = version_compare($currentVersion, $minimumVersion, '<') || $forceUpdate;
+        
+        // Mise à jour requise si :
+        // 1. La version actuelle est inférieure à la version minimum, OU
+        // 2. Le force_update est activé, OU
+        // 3. Une mise à jour est disponible et le force_update est activé
+        $isUpdateRequired = version_compare($currentVersion, $minimumVersion, '<') || 
+                           ($isUpdateAvailable && $forceUpdate);
+
+        // Message personnalisé selon le cas
+        $message = 'Votre application est à jour.';
+        if ($isUpdateRequired) {
+            $message = 'Une mise à jour est requise pour continuer à utiliser l\'application. Veuillez mettre à jour vers la version ' . $latestVersion . '.';
+        } elseif ($isUpdateAvailable) {
+            $message = 'Une nouvelle version (' . $latestVersion . ') est disponible. Nous vous recommandons de mettre à jour.';
+        }
 
         return response()->json([
             'success' => true,
@@ -80,11 +100,7 @@ class AppConfigController extends Controller
                 'force_update' => $forceUpdate,
                 'download_url' => $downloadUrl,
                 'platform' => $platform,
-                'message' => $isUpdateRequired
-                    ? 'Une mise à jour est requise pour continuer à utiliser l\'application.'
-                    : ($isUpdateAvailable
-                        ? 'Une nouvelle version est disponible. Nous vous recommandons de mettre à jour.'
-                        : 'Votre application est à jour.'),
+                'message' => $message,
             ],
         ]);
     }

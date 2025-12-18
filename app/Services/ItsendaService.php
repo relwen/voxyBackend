@@ -7,19 +7,17 @@ use Illuminate\Support\Facades\Log;
 
 class ItsendaService
 {
-    private $appKey;
-    private $authKey;
+    private $bearerToken;
     private $baseUrl;
 
     public function __construct()
     {
-        $this->appKey = config('services.itsenda.app_key');
-        $this->authKey = config('services.itsenda.auth_key');
+        $this->bearerToken = config('services.itsenda.bearer_token');
         $this->baseUrl = config('services.itsenda.base_url');
     }
 
     /**
-     * Envoyer un SMS via l'API Itsenda
+     * Envoyer un SMS via l'API Wasender
      *
      * @param string $to Numéro de téléphone du destinataire
      * @param string $message Message à envoyer
@@ -28,15 +26,16 @@ class ItsendaService
     public function sendSMS(string $to, string $message): array
     {
         try {
-            $response = Http::asForm()->post($this->baseUrl . '/create-message', [
-                'appkey' => $this->appKey,
-                'authkey' => $this->authKey,
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->bearerToken,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/send-message', [
                 'to' => $to,
-                'message' => $message,
+                'text' => $message,
             ]);
 
             if ($response->successful()) {
-                Log::info('SMS envoyé avec succès via Itsenda', [
+                Log::info('SMS envoyé avec succès via Wasender', [
                     'to' => $to,
                     'response' => $response->json()
                 ]);
@@ -48,7 +47,7 @@ class ItsendaService
                 ];
             }
 
-            Log::error('Erreur lors de l\'envoi du SMS via Itsenda', [
+            Log::error('Erreur lors de l\'envoi du SMS via Wasender', [
                 'to' => $to,
                 'status' => $response->status(),
                 'response' => $response->body()
@@ -60,7 +59,7 @@ class ItsendaService
                 'error' => $response->body()
             ];
         } catch (\Exception $e) {
-            Log::error('Exception lors de l\'envoi du SMS via Itsenda', [
+            Log::error('Exception lors de l\'envoi du SMS via Wasender', [
                 'to' => $to,
                 'error' => $e->getMessage()
             ]);
