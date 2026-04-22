@@ -424,6 +424,32 @@
         function editPartition(id) {
             window.location.href = `/admin/partitions/${id}/edit`;
         }
+
+        // Fonction pour supprimer une partition
+        function deletePartition(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette partition ? Cette action est irréversible.')) {
+                fetch(`/admin/partitions/${id}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Une erreur est survenue lors de la suppression.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Une erreur réseau est survenue.');
+                });
+            }
+        }
     </script>
 </body>
 </html>

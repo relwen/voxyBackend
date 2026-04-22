@@ -392,6 +392,40 @@
             }
         }
 
+        // Action sur les partitions (si affichées)
+        function viewPartition(id) {
+            window.location.href = `/admin/partitions/${id}`;
+        }
+
+        function editPartition(id) {
+            window.location.href = `/admin/partitions/${id}/edit`;
+        }
+
+        function deletePartition(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette partition ? Cette action est irréversible.')) {
+                fetch(`/admin/partitions/${id}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Une erreur est survenue lors de la suppression.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Une erreur réseau est survenue.');
+                });
+            }
+        }
+
         // Fonction pour supprimer une vocalise
         window.deleteVocalise = function(id) {
             if (!confirm('Êtes-vous sûr de vouloir supprimer cette vocalise ?')) return;
