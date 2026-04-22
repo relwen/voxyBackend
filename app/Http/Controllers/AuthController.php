@@ -207,6 +207,25 @@ class AuthController extends Controller
     }
 
     /**
+     * Supprimer le compte de l'utilisateur connecté
+     */
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+        
+        // Supprimer tous les tokens de l'utilisateur
+        $user->tokens()->delete();
+        
+        // Supprimer l'utilisateur
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Compte supprimé avec succès'
+        ]);
+    }
+
+    /**
      * Récupérer la liste des chorales (public)
      */
     public function getChorales()

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class ItsendaService
 {
@@ -35,11 +34,6 @@ class ItsendaService
             ]);
 
             if ($response->successful()) {
-                Log::info('SMS envoyé avec succès via Wasender', [
-                    'to' => $to,
-                    'response' => $response->json()
-                ]);
-
                 return [
                     'success' => true,
                     'message' => 'SMS envoyé avec succès',
@@ -47,23 +41,12 @@ class ItsendaService
                 ];
             }
 
-            Log::error('Erreur lors de l\'envoi du SMS via Wasender', [
-                'to' => $to,
-                'status' => $response->status(),
-                'response' => $response->body()
-            ]);
-
             return [
                 'success' => false,
                 'message' => 'Erreur lors de l\'envoi du SMS',
                 'error' => $response->body()
             ];
         } catch (\Exception $e) {
-            Log::error('Exception lors de l\'envoi du SMS via Wasender', [
-                'to' => $to,
-                'error' => $e->getMessage()
-            ]);
-
             return [
                 'success' => false,
                 'message' => 'Erreur lors de l\'envoi du SMS: ' . $e->getMessage()
@@ -85,4 +68,3 @@ class ItsendaService
         return $this->sendSMS($phone, $message);
     }
 }
-

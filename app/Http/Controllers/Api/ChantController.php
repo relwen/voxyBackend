@@ -22,11 +22,6 @@ class ChantController extends Controller
             $user = Auth::user();
             $choraleId = $user?->chorale_id;
             
-            Log::info('ChantController::index - Début', [
-                'user_id' => $user->id ?? null,
-                'chorale_id' => $choraleId
-            ]);
-            
             if (!$choraleId) {
                 return response()->json([
                     'success' => false,
@@ -45,10 +40,6 @@ class ChantController extends Controller
                     'color' => '#4CAF50',
                 ]
             );
-            
-            Log::info('ChantController::index - Catégorie Chants', [
-                'category_id' => $chantsRubrique->id
-            ]);
             
             // Récupérer les sections (dossiers) de la catégorie "Chants"
             $sections = \App\Models\RubriqueSection::where('category_id', $chantsRubrique->id)
@@ -98,11 +89,7 @@ class ChantController extends Controller
                         'updated_at' => $section->updated_at,
                     ];
                 });
-            
-            Log::info('ChantController::index - Sections trouvées', [
-                'count' => $sections->count()
-            ]);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $sections
@@ -395,4 +382,3 @@ class ChantController extends Controller
         }
     }
 }
-

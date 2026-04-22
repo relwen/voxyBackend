@@ -5,7 +5,7 @@ use App\Http\Controllers\Web\AuthController as WebAuthController;
 use App\Http\Controllers\Web\AdminController as WebAdminController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login.maestro');
 });
 
 Route::get('/test', function () {
@@ -47,6 +47,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/chorales/{id}/edit', [WebAdminController::class, 'editChorale'])->name('admin.chorales.edit');
     Route::post('/admin/chorales/{id}/update', [WebAdminController::class, 'updateChorale'])->name('admin.chorales.update');
     Route::post('/admin/chorales/{id}/delete', [WebAdminController::class, 'deleteChorale'])->name('admin.chorales.delete');
+
+    // Redirections pour compatibilité
+    Route::get('/admin/messes', [WebAdminController::class, 'messes'])->name('admin.messes.index');
+    Route::get('/admin/vocalises', [WebAdminController::class, 'vocalises'])->name('admin.vocalises.index');
 });
 
 // Configuration de la chorale (pupitres et rubriques) - Accessible aux maestros et admins
@@ -89,6 +93,8 @@ Route::middleware(['auth', 'maestro'])->group(function () {
     Route::post('/admin/maestro/users/{id}/approve', [WebAdminController::class, 'maestroApproveUser'])->name('admin.maestro.users.approve');
     Route::post('/admin/maestro/users/{id}/reject', [WebAdminController::class, 'maestroRejectUser'])->name('admin.maestro.users.reject');
     Route::post('/admin/maestro/users/{id}/delete', [WebAdminController::class, 'maestroDeleteUser'])->name('admin.maestro.users.delete');
+    Route::post('/admin/maestro/users/{id}/make-maestro', [WebAdminController::class, 'maestroMakeMaestro'])->name('admin.maestro.users.make-maestro');
+    Route::post('/admin/maestro/users/{id}/make-user', [WebAdminController::class, 'maestroMakeUser'])->name('admin.maestro.users.make-user');
 });
 
 // Routes protégées pour l'administration (suite)

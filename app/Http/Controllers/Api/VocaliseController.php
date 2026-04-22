@@ -139,8 +139,6 @@ class VocaliseController extends Controller
             'description' => $partition->description,
             'audio_path' => $partition->audio_path,
             'audio_url' => $partition->audio_path ? asset('storage/' . $partition->audio_path) : null,
-            'files' => $allFiles, // Ajouter le champ files avec métadonnées
-            'files_with_metadata' => $filesWithMetadata, // Ajouter aussi files_with_metadata
             'audio_files' => !empty($audioFiles) ? $audioFiles : null,
             'soprano_files' => !empty($sopranoFiles) ? $sopranoFiles : null,
             'alto_files' => !empty($altoFiles) ? $altoFiles : null,
@@ -155,7 +153,6 @@ class VocaliseController extends Controller
             ] : null,
             'voice_part' => $partition->pupitre?->nom ?? 'Tous',
             'vocalise_part' => $partition->vocalise_part ?? null,
-            'chorale_id' => $partition->chorale_id,
             'created_at' => $partition->created_at ? $partition->created_at->toISOString() : now()->toISOString(),
             'updated_at' => $partition->updated_at ? $partition->updated_at->toISOString() : now()->toISOString(),
         ];

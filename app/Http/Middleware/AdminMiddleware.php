@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Log;
 
 class AdminMiddleware
 {
@@ -17,14 +16,6 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        
-        // Log pour déboguer
-        Log::info('AdminMiddleware - Vérification accès', [
-            'path' => $request->path(),
-            'user_id' => $user?->id,
-            'user_role' => $user?->role,
-            'user_email' => $user?->email,
-        ]);
 
         if (!$user || $user->role !== 'admin') {
             return response()->json([

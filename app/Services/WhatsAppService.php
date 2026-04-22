@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
@@ -37,13 +36,11 @@ class WhatsAppService
             $phoneNumber = $this->formatPhoneNumber($phoneNumber);
             
             if (!$phoneNumber) {
-                Log::warning('Numéro de téléphone invalide pour l\'envoi WhatsApp');
                 return false;
             }
 
             // Vérifier si l'envoi WhatsApp est activé
             if (!config('services.whatsapp.enabled', env('WHATSAPP_ENABLED', false))) {
-                Log::info('Envoi WhatsApp désactivé. Message simulé pour: ' . $phoneNumber);
                 return true; // Retourner true pour continuer le processus même si WhatsApp est désactivé
             }
 
@@ -61,7 +58,6 @@ class WhatsAppService
             return $this->sendViaCustomAPI($phoneNumber, $message);
 
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'envoi WhatsApp: ' . $e->getMessage());
             return false;
         }
     }
@@ -76,7 +72,6 @@ class WhatsAppService
         $from = config('services.twilio.whatsapp_from', env('TWILIO_WHATSAPP_FROM'));
 
         if (!$accountSid || !$authToken || !$from) {
-            Log::error('Configuration Twilio manquante');
             return false;
         }
 
@@ -89,11 +84,9 @@ class WhatsAppService
             ]);
 
         if ($response->successful()) {
-            Log::info('WhatsApp envoyé via Twilio à: ' . $phoneNumber);
             return true;
         }
 
-        Log::error('Erreur Twilio: ' . $response->body());
         return false;
     }
 
@@ -106,7 +99,6 @@ class WhatsAppService
         $phoneNumberId = config('services.whatsapp.meta_phone_number_id', env('WHATSAPP_META_PHONE_NUMBER_ID'));
 
         if (!$accessToken || !$phoneNumberId) {
-            Log::error('Configuration Meta WhatsApp manquante');
             return false;
         }
 
@@ -121,11 +113,9 @@ class WhatsAppService
             ]);
 
         if ($response->successful()) {
-            Log::info('WhatsApp envoyé via Meta à: ' . $phoneNumber);
             return true;
         }
 
-        Log::error('Erreur Meta WhatsApp: ' . $response->body());
         return false;
     }
 
@@ -135,7 +125,6 @@ class WhatsAppService
     protected function sendViaCustomAPI($phoneNumber, $message)
     {
         if (!$this->apiUrl || !$this->apiKey) {
-            Log::error('Configuration API WhatsApp personnalisée manquante');
             return false;
         }
 
@@ -149,11 +138,9 @@ class WhatsAppService
         ]);
 
         if ($response->successful()) {
-            Log::info('WhatsApp envoyé via API personnalisée à: ' . $phoneNumber);
             return true;
         }
 
-        Log::error('Erreur API personnalisée: ' . $response->body());
         return false;
     }
 
@@ -207,8 +194,6 @@ class WhatsAppService
             $message .= "L'équipe VoXY Box";
 
             $sent = $this->sendMessage($user->phone, $message);
-        } else {
-            Log::warning('L\'utilisateur ' . $user->id . ' n\'a pas de numéro de téléphone pour WhatsApp');
         }
 
         // Envoyer via Email si l'adresse email existe
@@ -217,16 +202,12 @@ class WhatsAppService
                 \Illuminate\Support\Facades\Mail::to($user->email)->send(
                     new \App\Mail\AccountApprovedMail($user)
                 );
-                Log::info('Email d\'approbation envoyé à: ' . $user->email);
                 $sent = true;
             } catch (\Exception $e) {
-                Log::error('Erreur lors de l\'envoi de l\'email d\'approbation: ' . $e->getMessage());
+                // Silently fail
             }
-        } else {
-            Log::warning('L\'utilisateur ' . $user->id . ' n\'a pas d\'adresse email');
         }
 
         return $sent;
     }
 }
-

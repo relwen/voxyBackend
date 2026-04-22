@@ -1,36 +1,20 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $rubrique->name }} - VoXY Maestro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        .bg-primary { background: rgb(158, 2, 80); }
-        .bg-primary-gradient { background: linear-gradient(135deg, rgb(78, 13, 4), rgb(179, 5, 5), rgb(158, 2, 80)); }
-        .text-primary { color: rgb(158, 2, 80); }
-        .border-primary { border-color: rgb(158, 2, 80); }
-        .material-icons {
-            font-family: 'Material Icons';
-            font-weight: normal;
-            font-style: normal;
-            font-size: 24px;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-        }
-    </style>
-</head>
-<body class="bg-gray-50" x-data="{ 
+@extends('layouts.maestro')
+
+@section('title', $rubrique->name . ' - VoXY Maestro')
+@section('page-title', $rubrique->name)
+
+@push('styles')
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+    .rubrique-gradient {
+        background: linear-gradient(135deg, {{ $rubrique->color ?? 'rgb(158, 2, 80)' }} 0%, {{ $rubrique->color ? 'rgba('.implode(',', sscanf($rubrique->color, "#%02x%02x%02x")).', 0.8)' : 'rgba(158, 2, 80, 0.8)' }} 100%);
+    }
+    [x-cloak] { display: none !important; }
+</style>
+@endpush
+
+@section('content')
+<div id="rubrique-container" x-data="{ 
     showSectionModal: false,
     showDossierModal: false,
     showPartitionModal: false,
@@ -64,849 +48,285 @@
         window.editingMesseId = null;
     }
 }">
-    @include('components.maestro-sidebar', ['user' => Auth::user(), 'chorale' => Auth::user()->chorale])
-    
-    <!-- Contenu principal -->
-    <div class="lg:ml-64">
-        <header class="bg-white shadow-sm border-b">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center">
-                    @if($rubrique->icon)
-                        <span class="material-icons text-5xl mr-4" style="color: {{ $rubrique->color ?? '#666' }}">{{ $rubrique->icon }}</span>
-                    @else
-                        <span class="material-icons text-5xl mr-4" style="color: {{ $rubrique->color ?? '#666' }}">folder</span>
-                    @endif
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">{{ $rubrique->name }}</h2>
-                        @if($rubrique->description)
-                            <p class="text-sm text-gray-600 mt-1">{{ $rubrique->description }}</p>
-                        @endif
-                        <span class="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            @if($rubrique->structure_type === 'simple')
-                                Structure simple
-                            @elseif($rubrique->structure_type === 'with_sections')
-                                Avec sections
-                            @else
-                                Avec dossiers et sections
-                            @endif
-                        </span>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    @if(strtolower($rubrique->name) === 'messes' || strtolower($rubrique->name) === 'vocalises' || strtolower($rubrique->name) === 'chants')
-                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
-                                class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                            <i class="fas fa-plus mr-2"></i>Nouveau {{ strtolower($rubrique->name) === 'messes' ? 'messe' : (strtolower($rubrique->name) === 'vocalises' ? 'vocalise' : 'chant') }}
-                        </button>
-                    @else
-                        @if($rubrique->hasDossiers())
-                            <button @click="showDossierModal = true; selectedDossier = null" 
-                                    class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                <i class="fas fa-folder-plus mr-2"></i>Nouveau dossier
-                            </button>
-                        @endif
-                        @if($rubrique->hasSections())
-                            <button @click="showSectionModal = true; editingSection = null; selectedDossier = null" 
-                                    class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                <i class="fas fa-plus mr-2"></i>Nouvelle section
-                            </button>
-                        @endif
-                        @if(!$rubrique->hasSections())
-                            <button @click="showPartitionModal = true; selectedSection = null" 
-                                    class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                <i class="fas fa-plus mr-2"></i>Nouvelle partition
-                            </button>
-                        @endif
+    <!-- Header with Actions -->
+    <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+            <div class="w-20 h-20 rounded-[2rem] bg-white shadow-xl shadow-slate-200/50 flex items-center justify-center border border-gray-100 overflow-hidden">
+                @if($rubrique->icon)
+                    <span class="material-icons text-5xl" style="color: {{ $rubrique->color ?? 'rgb(158, 2, 80)' }}">{{ $rubrique->icon }}</span>
+                @else
+                    <span class="material-icons text-5xl text-gray-200">folder</span>
+                @endif
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight">{{ $rubrique->name }}</h1>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                        @if($rubrique->structure_type === 'simple') Simple @elseif($rubrique->structure_type === 'with_sections') Sections @else Dossiers @endif
+                    </span>
+                    @if($rubrique->description)
+                        <span class="text-gray-400 text-sm font-medium">{{ Str::limit($rubrique->description, 50) }}</span>
                     @endif
                 </div>
             </div>
-        </header>
+        </div>
 
-        <main class="p-6">
-            @if(session('success'))
-                <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(strtolower($rubrique->name) === 'messes')
-                <!-- Interface simplifiée pour les Messes -->
-                @if($rubrique->directSections->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-church"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune messe</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer une messe.</p>
-                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Créer une messe
-                        </button>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($rubrique->directSections as $messe)
-                            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex-1">
-                                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                                            <i class="fas fa-church text-primary mr-2"></i>{{ $messe->nom }}
-                                        </h3>
-                                        @if($messe->structure && count($messe->structure) > 0)
-                                            <div class="mt-3 space-y-2">
-                                                <p class="text-sm font-medium text-gray-700">Parties :</p>
-                                                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                                    @foreach($messe->structure as $part)
-                                                        <li>{{ $part['nom'] }}
-                                                            @if(isset($part['subParts']) && count($part['subParts']) > 0)
-                                                                <ul class="list-disc list-inside ml-4 mt-1">
-                                                                    @foreach($part['subParts'] as $subPart)
-                                                                        <li>{{ $subPart['nom'] }}</li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="flex space-x-2 ml-4">
-                                        <a href="{{ route('admin.rubriques.messes.show', ['rubriqueId' => $rubrique->id, 'messeId' => $messe->id]) }}" 
-                                           class="text-primary hover:text-primary-dark bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-folder-open mr-1"></i>Ouvrir
-                                        </a>
-                                        <button @click="editMesse({{ $messe->id }})" 
-                                                class="text-blue-600 hover:text-blue-800">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button @click="deleteMesse({{ $messe->id }})" 
-                                                class="text-red-600 hover:text-red-800">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                @if($messe->partitions->count() > 0)
-                                    <div class="mt-4 pt-4 border-t">
-                                        <p class="text-sm text-gray-600">
-                                            <i class="fas fa-file-music mr-1"></i>
-                                            {{ $messe->partitions->count() }} partition(s)
-                                        </p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            @elseif(strtolower($rubrique->name) === 'chants')
-                <!-- Interface simplifiée pour les Chants -->
-                @if($rubrique->directSections->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-music"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun chant</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer un chant.</p>
-                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Créer un chant
-                        </button>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($rubrique->directSections as $chant)
-                            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex-1">
-                                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                                            <i class="fas fa-music text-primary mr-2"></i>{{ $chant->nom }}
-                                        </h3>
-                                        @if($chant->structure && count($chant->structure) > 0)
-                                            <div class="mt-3 space-y-2">
-                                                <p class="text-sm font-medium text-gray-700">Parties :</p>
-                                                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                                    @foreach($chant->structure as $part)
-                                                        <li>{{ $part['nom'] }}
-                                                            @if(isset($part['subParts']) && count($part['subParts']) > 0)
-                                                                <ul class="list-disc list-inside ml-4 mt-1">
-                                                                    @foreach($part['subParts'] as $subPart)
-                                                                        <li>{{ $subPart['nom'] }}</li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="flex space-x-2 ml-4">
-                                        <a href="{{ route('admin.rubriques.chants.show', ['rubriqueId' => $rubrique->id, 'chantId' => $chant->id]) }}" 
-                                           class="text-primary hover:text-primary-dark bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-folder-open mr-1"></i>Ouvrir
-                                        </a>
-                                        <button @click="editMesse({{ $chant->id }})" 
-                                                class="text-blue-600 hover:text-blue-800">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button @click="deleteMesse({{ $chant->id }})" 
-                                                class="text-red-600 hover:text-red-800">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                @if($chant->partitions->count() > 0)
-                                    <div class="mt-4 pt-4 border-t">
-                                        <p class="text-sm text-gray-600">
-                                            <i class="fas fa-file-music mr-1"></i>
-                                            {{ $chant->partitions->count() }} partition(s)
-                                        </p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            @elseif(strtolower($rubrique->name) === 'vocalises')
-                <!-- Interface simplifiée pour les Vocalises -->
-                @if($rubrique->directSections->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-music-note"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune vocalise</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer une vocalise.</p>
-                        <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Créer une vocalise
-                        </button>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach($rubrique->directSections as $vocaliseSection)
-                            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex-1">
-                                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                                            <i class="fas fa-music-note text-primary mr-2"></i>{{ $vocaliseSection->nom }}
-                                        </h3>
-                                        @if($vocaliseSection->structure && count($vocaliseSection->structure) > 0)
-                                            <div class="mt-3 space-y-2">
-                                                <p class="text-sm font-medium text-gray-700">Parties :</p>
-                                                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                                    @foreach($vocaliseSection->structure as $part)
-                                                        <li>{{ $part['nom'] }}
-                                                            @if(isset($part['subParts']) && count($part['subParts']) > 0)
-                                                                <ul class="list-disc list-inside ml-4 mt-1">
-                                                                    @foreach($part['subParts'] as $subPart)
-                                                                        <li>{{ $subPart['nom'] }}</li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="flex space-x-2 ml-4">
-                                        <a href="{{ route('admin.rubriques.vocalises.show', ['rubriqueId' => $rubrique->id, 'vocaliseId' => $vocaliseSection->id]) }}" 
-                                           class="text-primary hover:text-primary-dark bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-folder-open mr-1"></i>Ouvrir
-                                        </a>
-                                        <button @click="editMesse({{ $vocaliseSection->id }})" 
-                                                class="text-blue-600 hover:text-blue-800">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button @click="deleteMesse({{ $vocaliseSection->id }})" 
-                                                class="text-red-600 hover:text-red-800">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                @if($vocaliseSection->vocalises->count() > 0)
-                                    <div class="mt-4 pt-4 border-t">
-                                        <p class="text-sm text-gray-600">
-                                            <i class="fas fa-microphone mr-1"></i>
-                                            {{ $vocaliseSection->vocalises->count() }} vocalise(s)
-                                        </p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            @elseif($rubrique->structure_type === 'simple')
-                <!-- Structure simple : partitions directes -->
-                @if($rubrique->partitions->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-file-music"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune partition</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer une partition.</p>
-                        <button @click="showPartitionModal = true; selectedSection = null" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Créer une partition
-                        </button>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        @foreach($rubrique->partitions as $partition)
-                            @include('admin.rubriques.partition-card', ['partition' => $partition])
-                        @endforeach
-                    </div>
-                @endif
-            @elseif($rubrique->structure_type === 'with_dossiers')
-                <!-- Structure avec dossiers : Dossiers -> Sections -> Partitions -->
-                @if($rubrique->dossiers->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-folder-open"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun dossier</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer un dossier. Vous pourrez créer des dossiers dans des dossiers.</p>
-                        <button @click="showDossierModal = true" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-folder-plus mr-2"></i>Créer un dossier
-                        </button>
-                    </div>
-                @else
-                    <div class="space-y-6">
-                        @foreach($rubrique->dossiers as $dossier)
-                            <div id="dossier-{{ $dossier->id }}" class="bg-white rounded-lg shadow p-6">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 class="text-xl font-semibold text-gray-900 flex items-center">
-                                            <i class="fas fa-folder mr-2 text-yellow-500"></i>{{ $dossier->nom }}
-                                        </h3>
-                                        @if($dossier->description)
-                                            <p class="text-sm text-gray-600 mt-1">{{ $dossier->description }}</p>
-                                        @endif
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <button @click="showDossierModal = true; selectedDossier = {{ $dossier->id }}" 
-                                                class="bg-yellow-500 hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-folder-plus mr-2"></i>Nouveau sous-dossier
-                                        </button>
-                                        <button @click="showSectionModal = true; selectedDossier = {{ $dossier->id }}" 
-                                                class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-plus mr-2"></i>Nouvelle section
-                                        </button>
-                                        <button @click="editSection({{ $dossier->id }})" 
-                                                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button @click="deleteSection({{ $dossier->id }})" 
-                                                class="bg-red-200 hover:bg-red-300 text-red-700 px-4 py-2 rounded-lg text-sm font-medium">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Sous-dossiers et sections du dossier -->
-                                @php
-                                    $sousDossiers = $dossier->sections()->where('type', 'dossier')->get();
-                                    $sections = $dossier->sections()->where('type', 'section')->get();
-                                @endphp
-                                
-                                @if($sousDossiers->isEmpty() && $sections->isEmpty())
-                                    <div class="text-center py-8 bg-gray-50 rounded-lg">
-                                        <p class="text-gray-500 mb-4">Aucun élément dans ce dossier</p>
-                                        <div class="flex space-x-2 justify-center">
-                                            <button @click="showDossierModal = true; selectedDossier = {{ $dossier->id }}" 
-                                                    class="bg-yellow-500 hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                                <i class="fas fa-folder-plus mr-2"></i>Nouveau sous-dossier
-                                            </button>
-                                            <button @click="showSectionModal = true; selectedDossier = {{ $dossier->id }}" 
-                                                    class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                                                <i class="fas fa-plus mr-2"></i>Nouvelle section
-                                            </button>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="space-y-4">
-                                        <!-- Afficher les sous-dossiers récursivement -->
-                                        @foreach($sousDossiers as $sousDossier)
-                                            <div id="dossier-{{ $sousDossier->id }}" class="ml-4 border-l-2 border-yellow-300 pl-4">
-                                                <div class="bg-yellow-50 rounded-lg shadow p-4">
-                                                    <div class="flex items-center justify-between mb-3">
-                                                        <div>
-                                                            <h4 class="text-lg font-semibold text-gray-900 flex items-center">
-                                                                <i class="fas fa-folder mr-2 text-yellow-600"></i>{{ $sousDossier->nom }}
-                                                            </h4>
-                                                            @if($sousDossier->description)
-                                                                <p class="text-sm text-gray-600 mt-1">{{ $sousDossier->description }}</p>
-                                                            @endif
-                                                        </div>
-                                                        <div class="flex space-x-2">
-                                                            <button @click="showDossierModal = true; selectedDossier = {{ $sousDossier->id }}" 
-                                                                    class="bg-yellow-500 hover:opacity-90 text-white px-3 py-1 rounded text-xs font-medium">
-                                                                <i class="fas fa-folder-plus mr-1"></i>Sous-dossier
-                                                            </button>
-                                                            <button @click="showSectionModal = true; selectedDossier = {{ $sousDossier->id }}" 
-                                                                    class="bg-primary hover:opacity-90 text-white px-3 py-1 rounded text-xs font-medium">
-                                                                <i class="fas fa-plus mr-1"></i>Section
-                                                            </button>
-                                                            <button @click="editSection({{ $sousDossier->id }})" 
-                                                                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs">
-                                                                <i class="fas fa-edit"></i>
-                                                            </button>
-                                                            <button @click="deleteSection({{ $sousDossier->id }})" 
-                                                                    class="bg-red-200 hover:bg-red-300 text-red-700 px-3 py-1 rounded text-xs">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    @php
-                                                        $sousSections = $sousDossier->sections()->where('type', 'section')->get();
-                                                    @endphp
-                                                    @if($sousSections->isNotEmpty())
-                                                        <div class="mt-3 space-y-2">
-                                                            @foreach($sousSections as $sousSection)
-                                                                @include('admin.rubriques.section-block', ['section' => $sousSection, 'rubrique' => $rubrique])
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                        
-                                        <!-- Afficher les sections -->
-                                        @foreach($sections as $section)
-                                            @include('admin.rubriques.section-block', ['section' => $section, 'rubrique' => $rubrique])
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
+        <div class="flex flex-wrap gap-3">
+            @if(in_array(strtolower($rubrique->name), ['messes', 'vocalises', 'chants']))
+                <button @click="showMesseModal = true; resetMesseForm(); window.editingMesseId = null;" 
+                        class="bg-primary-gradient text-white px-6 py-4 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Nouveau {{ strtolower($rubrique->name) === 'messes' ? 'Messe' : (strtolower($rubrique->name) === 'vocalises' ? 'Vocalise' : 'Chant') }}
+                </button>
             @else
-                <!-- Structure avec sections : Sections -> Partitions -->
-                @if($rubrique->directSections->isEmpty())
-                    <div class="text-center py-12 bg-white rounded-lg shadow">
-                        <div class="text-gray-400 text-6xl mb-4"><i class="fas fa-folder-open"></i></div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune section</h3>
-                        <p class="text-gray-500 mb-4">Commencez par créer une section pour organiser vos partitions.</p>
-                        <button @click="showSectionModal = true" 
-                                class="bg-primary hover:opacity-90 text-white px-6 py-3 rounded-lg font-medium">
-                            <i class="fas fa-plus mr-2"></i>Créer une section
-                        </button>
-                    </div>
-                @else
-                    <div class="space-y-6">
-                        @foreach($rubrique->directSections as $section)
-                            @include('admin.rubriques.section-block', ['section' => $section, 'rubrique' => $rubrique])
-                        @endforeach
-                    </div>
+                @if($rubrique->hasDossiers())
+                    <button @click="showDossierModal = true; selectedDossier = null" 
+                            class="bg-white text-gray-700 border border-gray-200 px-6 py-4 rounded-2xl text-sm font-black shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2">
+                        <i class="fas fa-folder-plus text-primary"></i> Nouveau Dossier
+                    </button>
+                @endif
+                @if($rubrique->hasSections())
+                    <button @click="showSectionModal = true; editingSection = null; selectedDossier = null" 
+                            class="bg-primary-gradient text-white px-6 py-4 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nouvelle Section
+                    </button>
+                @endif
+                @if(!$rubrique->hasSections() && !$rubrique->hasDossiers())
+                    <button @click="showPartitionModal = true; selectedSection = null" 
+                            class="bg-primary-gradient text-white px-6 py-4 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nouvelle Partition
+                    </button>
                 @endif
             @endif
-        </main>
+        </div>
     </div>
 
-    <!-- Modals (à inclure depuis des fichiers séparés ou définis ici) -->
+    @if(session('success'))
+    <div class="mb-8 rounded-[2rem] bg-green-50 p-6 border border-green-100 flex items-center gap-4 animate-fade-in shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center text-white shadow-lg shadow-green-200">
+            <i class="fas fa-check text-lg"></i>
+        </div>
+        <p class="text-sm font-bold text-green-800">{{ session('success') }}</p>
+    </div>
+    @endif
+
+    <!-- Content Grid -->
+    <div class="space-y-8">
+        @if(strtolower($rubrique->name) === 'messes')
+            <!-- Messes View -->
+            @include('admin.rubriques._messes_list', ['rubrique' => $rubrique])
+        @elseif(strtolower($rubrique->name) === 'chants')
+            <!-- Chants View -->
+            @include('admin.rubriques._chants_list', ['rubrique' => $rubrique])
+        @elseif(strtolower($rubrique->name) === 'vocalises')
+            <!-- Vocalises View -->
+            @include('admin.rubriques._vocalises_list', ['rubrique' => $rubrique])
+        @elseif($rubrique->structure_type === 'simple')
+            <!-- Simple Partitions View -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @forelse($rubrique->partitions as $partition)
+                    @include('admin.rubriques.partition-card', ['partition' => $partition])
+                @empty
+                    <div class="col-span-full py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+                        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-music text-gray-200 text-4xl"></i>
+                        </div>
+                        <h3 class="text-gray-400 font-bold text-xl">Aucune partition ici</h3>
+                        <p class="text-gray-300 text-sm mt-1">Commencez par ajouter votre première partition.</p>
+                        <button @click="showPartitionModal = true; selectedSection = null" class="mt-8 text-primary font-black py-3 px-8 rounded-2xl border-2 border-primary hover:bg-primary hover:text-white transition-all uppercase tracking-widest text-xs">
+                            Ajouter une partition
+                        </button>
+                    </div>
+                @endforelse
+            </div>
+        @elseif($rubrique->structure_type === 'with_dossiers')
+            <!-- Dossiers View -->
+            @include('admin.rubriques._dossiers_list', ['rubrique' => $rubrique])
+        @else
+            <!-- Sections View -->
+            <div class="space-y-8">
+                @forelse($rubrique->directSections as $section)
+                    @include('admin.rubriques.section-block', ['section' => $section, 'rubrique' => $rubrique])
+                @empty
+                    <div class="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+                        <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-folder-open text-gray-200 text-4xl"></i>
+                        </div>
+                        <h3 class="text-gray-400 font-bold text-xl">Aucune section</h3>
+                        <p class="text-gray-300 text-sm mt-1">Créez des sections pour organiser vos partitions.</p>
+                        <button @click="showSectionModal = true" class="mt-8 text-primary font-black py-3 px-8 rounded-2xl border-2 border-primary hover:bg-primary hover:text-white transition-all uppercase tracking-widest text-xs">
+                            Créer une section
+                        </button>
+                    </div>
+                @endforelse
+            </div>
+        @endif
+    </div>
+
+    <!-- Modals -->
     @include('admin.rubriques.modals', ['rubrique' => $rubrique, 'pupitres' => $pupitres])
 
-    <!-- Modal pour créer une messe simplifiée -->
-    <div x-show="showMesseModal" 
-         x-cloak
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-         @click.self="showMesseModal = false">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900" x-text="window.editingMesseId ? ('Modifier le ' + (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'chants' ? 'chant' : 'messe'))) : ('Créer un nouveau ' + (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : (rubriqueId === {{ $rubrique->id }} && '{{ strtolower($rubrique->name) }}' === 'chants' ? 'chant' : 'messe')))"></h3>
-            </div>
+    <!-- Simplified Messe Modal -->
+    <div x-show="showMesseModal" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div x-show="showMesseModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showMesseModal = false"></div>
+        <div x-show="showMesseModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" class="relative w-full max-w-2xl bg-white rounded-[2.5rem] p-10 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-black text-gray-900 mb-6" x-text="window.editingMesseId ? 'Modifier l\'élément' : 'Nouvel élément'"></h3>
             
-            <form @submit.prevent="window.createMesse()" class="p-6 space-y-6">
-                <!-- Nom -->
+            <form @submit.prevent="window.createMesse()" class="space-y-6">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Nom <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" 
-                           x-model="messeForm.nom"
-                           required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                           :placeholder="'{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'Ex: Vocalise Do-Ré-Mi' : ('{{ strtolower($rubrique->name) }}' === 'chants' ? 'Ex: Chant de Noël' : 'Ex: Messe de Noël')">
+                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Nom / Titre *</label>
+                    <input type="text" x-model="messeForm.nom" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold">
                 </div>
 
-                <!-- Case à cocher : Cette section a des parties -->
-                <div class="flex items-center">
-                    <input type="checkbox" 
-                           id="hasParts"
-                           x-model="messeForm.hasParts"
-                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                    <label for="hasParts" class="ml-2 block text-sm text-gray-700">
-                        Cette {{ strtolower($rubrique->name) === 'vocalises' ? 'vocalise' : 'messe' }} a des parties
-                    </label>
+                <div class="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl">
+                    <input type="checkbox" id="hasParts" x-model="messeForm.hasParts" class="w-5 h-5 rounded border-gray-300 text-primary">
+                    <label for="hasParts" class="text-sm font-bold text-gray-700">Cet élément contient plusieurs parties (ex: Kyrié, Gloria...)</label>
                 </div>
 
-                <!-- Formulaire pour les parties (affiché si hasParts est coché) -->
-                <div x-show="messeForm.hasParts" x-cloak class="space-y-4 border-t pt-4">
+                <div x-show="messeForm.hasParts" x-cloak class="space-y-4 pt-4 border-t border-gray-100">
                     <div class="flex items-center justify-between">
-                        <label class="block text-sm font-medium text-gray-700">Parties</label>
-                        <button type="button" 
-                                @click="addPart()"
-                                class="text-sm text-primary hover:text-primary-dark">
-                            <i class="fas fa-plus mr-1"></i>Ajouter une partie
+                        <label class="text-xs font-black uppercase tracking-widest text-gray-400">Structure des parties</label>
+                        <button type="button" @click="addPart()" class="text-xs font-black text-primary uppercase">
+                            <i class="fas fa-plus mr-1"></i> Ajouter une partie
                         </button>
                     </div>
 
-                    <template x-for="(part, index) in messeForm.parts" :key="index">
-                        <div class="border border-gray-200 rounded-lg p-4 space-y-3">
-                            <div class="flex items-center space-x-2">
-                                <input type="text" 
-                                       x-model="part.nom"
-                                       :placeholder="'{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'Nom de la partie (ex: Exercice 1)' : 'Nom de la partie (ex: Kyrié)'"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                                <button type="button" 
-                                        @click="removePart(index)"
-                                        class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                            
-                            <!-- Sous-parties -->
-                            <div class="ml-4 space-y-2">
-                                <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           x-model="part.hasSubParts"
-                                           class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                                    <label class="ml-2 block text-xs text-gray-600">
-                                        Cette partie a des sous-éléments
-                                    </label>
+                    <div class="space-y-3">
+                        <template x-for="(part, index) in messeForm.parts" :key="index">
+                            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                <div class="flex items-center gap-3">
+                                    <input type="text" x-model="part.nom" placeholder="Nom de la partie" class="flex-1 bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm">
+                                    <button type="button" @click="removePart(index)" class="text-red-400 hover:text-red-600">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
-                                
-                                <div x-show="part.hasSubParts" x-cloak class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-gray-600">Sous-éléments</span>
-                                        <button type="button" 
-                                                @click="addPart(index)"
-                                                class="text-xs text-primary hover:text-primary-dark">
-                                            <i class="fas fa-plus mr-1"></i>Ajouter
-                                        </button>
+                                <div class="mt-4 flex items-center gap-4">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" x-model="part.hasSubParts" class="rounded text-primary">
+                                        <span class="text-[10px] font-bold text-gray-500 uppercase">Sous-éléments</span>
                                     </div>
-                                    
+                                    <button x-show="part.hasSubParts" type="button" @click="addPart(index)" class="text-[10px] font-black text-primary uppercase">
+                                        <i class="fas fa-plus mr-1"></i> Sous-partie
+                                    </button>
+                                </div>
+                                <div x-show="part.hasSubParts" class="mt-3 pl-6 space-y-2">
                                     <template x-for="(subPart, subIndex) in part.subParts" :key="subIndex">
-                                        <div class="flex items-center space-x-2">
-                                            <input type="text" 
-                                                   x-model="subPart.nom"
-                                                   placeholder="Nom du sous-élément"
-                                                   class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent">
-                                            <button type="button" 
-                                                    @click="removePart(subIndex, index)"
-                                                    class="text-red-600 hover:text-red-800 text-sm">
-                                                <i class="fas fa-trash"></i>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" x-model="subPart.nom" placeholder="Sous-élément" class="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-xs">
+                                            <button type="button" @click="removePart(subIndex, index)" class="text-red-300 hover:text-red-500 text-xs">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </template>
                                 </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
 
-                <!-- Boutons -->
-                <div class="flex justify-end space-x-3 pt-4 border-t">
-                    <button type="button" 
-                            @click="showMesseModal = false; resetMesseForm(); window.editingMesseId = null;"
-                            class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
-                        Annuler
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90">
-                        <span x-text="window.editingMesseId ? 'Modifier' : ('Créer la ' + ('{{ strtolower($rubrique->name) }}' === 'vocalises' ? 'vocalise' : 'messe'))"></span>
-                    </button>
+                <div class="mt-8 flex gap-3">
+                    <button type="button" @click="showMesseModal = false; resetMesseForm();" class="flex-1 py-4 rounded-2xl text-sm font-bold text-gray-500 hover:bg-gray-100">Annuler</button>
+                    <button type="submit" class="flex-1 py-4 bg-primary-gradient text-white rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all">Enregistrer</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
+@endsection
 
-    <script>
-        const rubriqueId = {{ $rubrique->id }};
-        const structureType = '{{ $rubrique->structure_type }}';
-        
-        // Fonction pour créer une messe
-        window.createMesse = function() {
-            const alpineComponent = Alpine.$data(document.querySelector('[x-data]'));
-            const formData = {
-                nom: alpineComponent.messeForm.nom,
-                has_parts: alpineComponent.messeForm.hasParts,
-                structure: null
-            };
-            
-            if (formData.has_parts && alpineComponent.messeForm.parts.length > 0) {
-                formData.structure = alpineComponent.messeForm.parts.map(part => {
-                    const partData = {
-                        nom: part.nom || '',
-                        subParts: []
-                    };
-                    if (part.hasSubParts && part.subParts && part.subParts.length > 0) {
-                        partData.subParts = part.subParts.map(subPart => ({
-                            nom: subPart.nom || ''
-                        }));
-                    }
-                    return partData;
-                });
-            }
-            
-            const isEdit = window.editingMesseId;
-            const isVocalises = {{ strtolower($rubrique->name) === 'vocalises' ? 'true' : 'false' }};
-            const isChants = {{ strtolower($rubrique->name) === 'chants' ? 'true' : 'false' }};
-            const url = isEdit 
-                ? `/admin/rubriques/${rubriqueId}/sections/${window.editingMesseId}`
-                : (isVocalises || isChants ? `/admin/rubriques/${rubriqueId}/sections` : `/admin/rubriques/${rubriqueId}/messes`);
-            const method = isEdit ? 'PUT' : 'POST';
-            
-            // Pour les vocalises et chants, utiliser storeSection au lieu de storeMesse
-            if (!isEdit && (isVocalises || isChants)) {
-                formData.type = 'section';
-            }
-            
-            fetch(url, {
-                method: method,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de ' + (isEdit ? 'la modification' : 'la création') + ' de la messe');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Erreur lors de ' + (isEdit ? 'la modification' : 'la création') + ' de la messe');
-            });
+@push('scripts')
+<script>
+    const rubriqueId = {{ $rubrique->id }};
+    const structureType = '{{ $rubrique->structure_type }}';
+    
+    window.createMesse = function() {
+        const alpine = Alpine.$data(document.getElementById('rubrique-container'));
+        const formData = {
+            nom: alpine.messeForm.nom,
+            has_parts: alpine.messeForm.hasParts,
+            structure: null
         };
         
-        function editMesse(id) {
-            fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`)
-                .then(res => res.json())
-                .then(data => {
-                    // Remplir le formulaire avec les données de la messe
-                    const alpineComponent = Alpine.$data(document.querySelector('[x-data]'));
-                    alpineComponent.messeForm.nom = data.nom;
-                    alpineComponent.messeForm.hasParts = data.structure && data.structure.length > 0;
-                    if (data.structure) {
-                        alpineComponent.messeForm.parts = data.structure.map(part => ({
-                            nom: part.nom,
-                            hasSubParts: part.subParts && part.subParts.length > 0,
-                            subParts: part.subParts ? part.subParts.map(subPart => ({
-                                nom: subPart.nom,
-                                hasSubParts: false,
-                                subParts: []
-                            })) : []
-                        }));
-                    }
-                    alpineComponent.showMesseModal = true;
-                    window.editingMesseId = id;
-                });
-        }
-        
-        function deleteMesse(id) {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer cette messe ?')) return;
-            
-            fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+        if (formData.has_parts && alpine.messeForm.parts.length > 0) {
+            formData.structure = alpine.messeForm.parts.map(part => {
+                const partData = { nom: part.nom || '', subParts: [] };
+                if (part.hasSubParts && part.subParts) {
+                    partData.subParts = part.subParts.map(sp => ({ nom: sp.nom || '' }));
                 }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de la suppression');
-                }
+                return partData;
             });
         }
         
-        // Fonction pour sauvegarder une partition
-        function savePartition() {
-            const form = document.getElementById('partition-form');
-            const formData = new FormData(form);
-            const sectionId = window.selectedSection;
-            
-            let url;
-            if (sectionId) {
-                url = `/admin/rubriques/${rubriqueId}/sections/${sectionId}/partitions`;
-            } else {
-                url = `/admin/rubriques/${rubriqueId}/partitions`;
-            }
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de la création de la partition');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Erreur lors de la création de la partition');
-            });
-        }
+        const isEdit = window.editingMesseId;
+        const isVocalises = {{ strtolower($rubrique->name) === 'vocalises' ? 'true' : 'false' }};
+        const isChants = {{ strtolower($rubrique->name) === 'chants' ? 'true' : 'false' }};
+        const url = isEdit ? `/admin/rubriques/${rubriqueId}/sections/${window.editingMesseId}` : (isVocalises || isChants ? `/admin/rubriques/${rubriqueId}/sections` : `/admin/rubriques/${rubriqueId}/messes`);
+        const method = isEdit ? 'PUT' : 'POST';
         
-        // Exposer savePartition globalement pour Alpine.js
-        window.savePartition = savePartition;
+        if (!isEdit && (isVocalises || isChants)) formData.type = 'section';
         
-        function editSection(id) {
-            fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`)
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('section-nom').value = data.nom;
-                    document.getElementById('section-description').value = data.description || '';
-                    document.getElementById('section-order').value = data.order || 0;
-                    if (data.type) {
-                        document.getElementById('section-type').value = data.type;
-                    }
-                    if (data.dossier_id) {
-                        document.getElementById('section-dossier-id').value = data.dossier_id;
-                    }
-                    window.editingSectionId = id;
-                    if (data.type === 'dossier') {
-                        window.showDossierModal = true;
-                    } else {
-                        window.showSectionModal = true;
-                    }
-                });
-        }
-
-        function deleteSection(id) {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
-            
-            fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de la suppression');
-                }
-            });
-        }
-
-        function saveSection() {
-            const form = document.getElementById('section-form');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData);
-            // Déterminer le type selon le modal ouvert
-            if (window.showDossierModal) {
-                data.type = 'dossier';
-            } else {
-                data.type = 'section';
-            }
-            if (window.selectedDossier) {
-                data.dossier_id = window.selectedDossier;
-            } else {
-                data.dossier_id = null;
-            }
-            
-            const url = window.editingSectionId 
-                ? `/admin/rubriques/${rubriqueId}/sections/${window.editingSectionId}`
-                : `/admin/rubriques/${rubriqueId}/sections`;
-            const method = window.editingSectionId ? 'PUT' : 'POST';
-            
-            fetch(url, {
-                method: method,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de l\'enregistrement');
-                }
-            });
-        }
-
-        function savePartition() {
-            const form = document.getElementById('partition-form');
-            const formData = new FormData(form);
-            const sectionId = window.selectedSection;
-            
-            let url;
-            if (sectionId) {
-                url = `/admin/rubriques/${rubriqueId}/sections/${sectionId}/partitions`;
-            } else {
-                url = `/admin/rubriques/${rubriqueId}/partitions`;
-            }
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.message || 'Erreur lors de l\'enregistrement');
-                }
-            })
-            .catch(error => {
-                console.error('Erreur:', error);
-                alert('Une erreur est survenue lors de l\'enregistrement');
-            });
-        }
-
-        function viewPartition(id) {
-            window.open(`/admin/partitions/${id}`, '_blank');
-        }
-
-        function editPartition(id) {
-            window.location.href = `/admin/partitions/${id}/edit`;
-        }
-    </script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
-    <script>
-        // Scroll vers l'élément si l'ancre est présente dans l'URL
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.location.hash) {
-                const element = document.querySelector(window.location.hash);
-                if (element) {
-                    setTimeout(() => {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        // Ajouter un highlight temporaire
-                        element.style.transition = 'box-shadow 0.3s';
-                        element.style.boxShadow = '0 0 0 3px rgba(158, 2, 80, 0.3)';
-                        setTimeout(() => {
-                            element.style.boxShadow = '';
-                        }, 2000);
-                    }, 300);
-                }
-            }
+        fetch(url, {
+            method: method,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        }).then(res => res.json()).then(data => {
+            if (data.success) location.reload();
+            else alert(data.message || 'Erreur');
         });
-    </script>
-</body>
-</html>
+    };
+
+    function editMesse(id) {
+        fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`).then(res => res.json()).then(data => {
+            const alpine = Alpine.$data(document.getElementById('rubrique-container'));
+            alpine.messeForm.nom = data.nom;
+            alpine.messeForm.hasParts = data.structure && data.structure.length > 0;
+            if (data.structure) {
+                alpine.messeForm.parts = data.structure.map(p => ({
+                    nom: p.nom,
+                    hasSubParts: p.subParts && p.subParts.length > 0,
+                    subParts: p.subParts ? p.subParts.map(sp => ({ nom: sp.nom })) : []
+                }));
+            }
+            alpine.showMesseModal = true;
+            window.editingMesseId = id;
+        });
+    }
+
+    function deleteMesse(id) {
+        if (!confirm('Supprimer cet élément ?')) return;
+        fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content }
+        }).then(res => res.json()).then(data => {
+            if (data.success) location.reload();
+        });
+    }
+
+    function editSection(id) {
+        fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`).then(res => res.json()).then(data => {
+            document.getElementById('section-nom').value = data.nom;
+            document.getElementById('section-description').value = data.description || '';
+            document.getElementById('section-order').value = data.order || 0;
+            if (data.type) document.getElementById('section-type').value = data.type;
+            if (data.dossier_id) document.getElementById('section-dossier-id').value = data.dossier_id;
+            window.editingSectionId = id;
+            if (data.type === 'dossier') window.showDossierModal = true;
+            else window.showSectionModal = true;
+        });
+    }
+
+    function deleteSection(id) {
+        if (!confirm('Supprimer cet élément ?')) return;
+        fetch(`/admin/rubriques/${rubriqueId}/sections/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content }
+        }).then(res => res.json()).then(data => {
+            if (data.success) location.reload();
+        });
+    }
+</script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endpush

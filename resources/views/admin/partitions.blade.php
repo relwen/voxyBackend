@@ -1,219 +1,127 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Partitions - VoXY Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .bg-primary { background: rgb(158, 2, 80); }
-        .bg-primary-gradient { background: linear-gradient(135deg, rgb(78, 13, 4), rgb(179, 5, 5), rgb(158, 2, 80)); }
-        .text-primary { color: rgb(158, 2, 80); }
-        .border-primary { border-color: rgb(158, 2, 80); }
-    </style>
-</head>
-<body class="bg-gray-50" x-data="{ sidebarOpen: false }">
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
-         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
-        
-        <!-- Logo -->
-        <div class="flex items-center justify-center h-16 bg-primary-gradient">
-            <h1 class="text-xl font-bold text-white">VoXY Admin</h1>
+@extends('layouts.admin')
+
+@section('content')
+<div class="py-12 px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center sm:justify-between mb-10">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight">Espace <span class="text-primary italic">Partitions</span></h1>
+            <p class="mt-2 text-sm text-slate-500 font-medium">Gérez le répertoire musical global et les fichiers associés.</p>
         </div>
-        
-        <!-- Navigation -->
-        <nav class="mt-8">
-            <div class="px-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-chart-line w-5 h-5 mr-3"></i>
-                    Dashboard
-                </a>
-                
-                <a href="{{ route('admin.users') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-users w-5 h-5 mr-3"></i>
-                    Utilisateurs
-                </a>
-                
-                <a href="{{ route('admin.chorales') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-music w-5 h-5 mr-3"></i>
-                    Chorales
-                </a>
-                
-                <a href="{{ route('admin.partitions') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors bg-gray-100 text-primary border-r-4 border-primary">
-                    <i class="fas fa-file-music w-5 h-5 mr-3"></i>
-                    Partitions
-                </a>
-                
-                <a href="{{ route('admin.messes.index') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-church w-5 h-5 mr-3"></i>
-                    Messes
-                </a>
-                
-                <a href="{{ route('admin.vocalises.index') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-microphone w-5 h-5 mr-3"></i>
-                    Vocalises
-                </a>
-                
-                <a href="{{ route('admin.categories') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-tags w-5 h-5 mr-3"></i>
-                    Catégories
-                </a>
-            </div>
-        </nav>
+        <div class="mt-4 sm:mt-0">
+            <a href="{{ route('admin.partitions.create') }}" 
+               class="inline-flex items-center gap-2 rounded-2xl bg-primary-gradient px-6 py-4 text-sm font-bold text-white shadow-xl hover:shadow-primary/30 transform hover:-translate-y-1 transition-all">
+                <i class="fas fa-plus"></i> Nouvelle Partition
+            </a>
+        </div>
     </div>
-    
-    <!-- Overlay mobile -->
-    <div x-show="sidebarOpen" 
-         class="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-         @click="sidebarOpen = false"></div>
-    
-    <!-- Contenu principal -->
-    <div class="lg:ml-64">
-        <!-- Navbar -->
-        <header class="bg-white shadow-sm border-b">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center">
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                    <h2 class="ml-4 lg:ml-0 text-2xl font-bold text-gray-800">Gestion des Partitions</h2>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                            <span class="text-white text-sm font-medium">{{ substr(Auth::user()->name, 0, 1) }}</span>
-                        </div>
-                        <span class="font-medium text-gray-700">{{ Auth::user()->name }}</span>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                            </button>
-                        </form>
-                    </div>
-                </div>
+
+    @if(session('success'))
+    <div class="mb-8 rounded-2xl bg-green-50 p-4 border border-green-100 shadow-sm animate-fade-in-down">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
+                <i class="fas fa-check text-white"></i>
             </div>
-        </header>
+            <div class="ml-4">
+                <p class="text-sm font-bold text-green-800">{{ session('success') }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
 
-        <!-- Contenu -->
-        <main class="p-6">
-            @if(session('success'))
-                <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <div class="bg-white shadow-lg rounded-xl border border-gray-100">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Liste des Partitions</h3>
-                        <p class="text-sm text-gray-600">Créer et gérer les partitions</p>
-                    </div>
-                    <a href="{{ route('admin.partitions.create') }}" class="relative z-10 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center cursor-pointer">
-                        <i class="fas fa-plus mr-2"></i>Nouvelle Partition
-                    </a>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Partition</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Chorale</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Catégorie</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fichiers</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach($partitions as $partition)
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                                            <i class="fas fa-file-music text-white"></i>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $partition->title }}</div>
-                                            @if($partition->description)
-                                                <div class="text-xs text-gray-500">{{ Str::limit($partition->description, 50) }}</div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    {{ $partition->chorale->name ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($partition->category)
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            {{ $partition->category->name }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
+    <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 overflow-hidden border border-slate-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100">
+                <thead class="bg-slate-50/50">
+                    <tr>
+                        <th scope="col" class="px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Partition</th>
+                        <th scope="col" class="hidden md:table-cell px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Chorale</th>
+                        <th scope="col" class="hidden sm:table-cell px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Catégorie</th>
+                        <th scope="col" class="px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Fichiers</th>
+                        <th scope="col" class="relative px-8 py-5">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    @forelse($partitions as $partition)
+                    <tr class="group hover:bg-slate-50/80 transition-colors">
+                        <td class="whitespace-nowrap px-8 py-6">
+                            <div class="flex items-center">
+                                <div class="h-12 w-12 flex-shrink-0 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200 group-hover:bg-primary-gradient group-hover:border-transparent transition-all">
+                                    <i class="fas fa-file-audio text-slate-400 group-hover:text-white transition-colors"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-bold text-slate-900">{{ $partition->title }}</div>
+                                    @if($partition->description)
+                                        <div class="text-[10px] text-slate-400 font-medium max-w-[200px] truncate">{{ $partition->description }}</div>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-1">
-                                        @php
-                                            $filesByType = $partition->files_by_type ?? [];
-                                        @endphp
-                                        @foreach($filesByType as $type => $files)
-                                            @if(count($files) > 0)
-                                                @php
-                                                    $firstFile = $files[0];
-                                                    $icon = $firstFile['icon'] ?? 'fa-file';
-                                                    $colorClass = $firstFile['color_class'] ?? 'bg-gray-100 text-gray-800';
-                                                @endphp
-                                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $colorClass }}">
-                                                    <i class="fas {{ $icon }} mr-1"></i>{{ count($files) }}
-                                                </span>
-                                            @endif
-                                        @endforeach
-                                        @if(empty($filesByType) || (isset($filesByType['audio']) && count($filesByType['audio']) == 0 && isset($filesByType['pdf']) && count($filesByType['pdf']) == 0 && isset($filesByType['image']) && count($filesByType['image']) == 0))
-                                            <span class="text-gray-400 text-xs">Aucun fichier</span>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('admin.partitions.show', $partition->id) }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                            <i class="fas fa-eye mr-1"></i>Voir
-                                        </a>
-                                        <a href="{{ route('admin.partitions.edit', $partition->id) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                            <i class="fas fa-edit mr-1"></i>Éditer
-                                        </a>
-                                        <form method="POST" action="{{ route('admin.partitions.delete', $partition->id) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette partition ?')">
-                                            @csrf
-                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                <i class="fas fa-trash mr-1"></i>Supprimer
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                    {{ $partitions->links() }}
-                </div>
-            </div>
-        </main>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hidden md:table-cell px-8 py-6">
+                            <span class="text-sm text-slate-600 font-semibold">{{ $partition->chorale->name ?? '-' }}</span>
+                        </td>
+                        <td class="hidden sm:table-cell px-8 py-6">
+                            @if($partition->category)
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-[10px] font-bold text-purple-600 border border-purple-100">
+                                    <i class="fas fa-layer-group"></i>
+                                    {{ $partition->category->name }}
+                                </div>
+                            @else
+                                <span class="text-slate-300">-</span>
+                            @endif
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="flex gap-2">
+                                @php $filesByType = $partition->files_by_type ?? []; @endphp
+                                @foreach($filesByType as $type => $files)
+                                    @if(count($files) > 0)
+                                        <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center group/file relative" title="{{ count($files) }} {{ $type }}">
+                                            <i class="fas {{ $files[0]['icon'] ?? 'fa-file' }} text-[10px] {{ str_replace('text-', 'text-', $files[0]['text_color'] ?? 'text-slate-400') }}"></i>
+                                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border border-white">
+                                                {{ count($files) }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </td>
+                        <td class="whitespace-nowrap px-8 py-6 text-right text-sm font-medium">
+                            <div class="flex justify-end gap-3">
+                                <a href="{{ route('admin.partitions.show', $partition->id) }}" 
+                                   class="p-3 bg-slate-50 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-2xl transition-all border border-slate-100">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('admin.partitions.edit', $partition->id) }}" 
+                                   class="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-slate-100">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ route('admin.partitions.delete', $partition->id) }}" method="POST" onsubmit="return confirm('Supprimer cette partition ?')" class="inline">
+                                    @csrf
+                                    <button type="submit" class="p-3 bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-slate-100">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <i class="fas fa-music text-slate-100 text-6xl mb-4 block"></i>
+                            <h3 class="text-slate-400 font-bold">Aucune partition disponible</h3>
+                            <p class="text-slate-300 text-sm">Le répertoire est vide pour le moment.</p>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($partitions->hasPages())
+        <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100">
+            {{ $partitions->links() }}
+        </div>
+        @endif
     </div>
-</body>
-</html>
+</div>
+@endsection

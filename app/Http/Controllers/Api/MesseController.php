@@ -279,16 +279,12 @@ class MesseController extends Controller
     public function partitions($referenceId): JsonResponse
     {
         try {
-            Log::info("Partitions request for referenceId: $referenceId");
-            
             // Cette méthode est pour compatibilité avec l'ancien système
             // Dans le nouveau système, les partitions sont liées directement aux sections via messe_part
             $partitions = Partition::where('rubrique_section_id', $referenceId)
                 ->with(['pupitre'])
                 ->get();
-            
-            Log::info("Found " . $partitions->count() . " partitions for referenceId: $referenceId");
-            
+
             // Formater les partitions avec les fichiers et métadonnées
             $formattedPartitions = $partitions->map(function ($partition) {
                 try {
@@ -476,14 +472,6 @@ class MesseController extends Controller
 
             $partition->files = $files;
             $partition->save();
-
-            Log::info("Fichier uploadé avec succès", [
-                'chant_id' => $chantId,
-                'pupitre' => $pupitre,
-                'file_type' => $fileType,
-                'path' => $path,
-                'partition_id' => $partition->id,
-            ]);
 
             return response()->json([
                 'success' => true,

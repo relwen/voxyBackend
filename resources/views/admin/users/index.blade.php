@@ -1,253 +1,160 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Utilisateurs - VoXY Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .bg-primary { background: rgb(158, 2, 80); }
-        .bg-primary-gradient { background: linear-gradient(135deg, rgb(78, 13, 4), rgb(179, 5, 5), rgb(158, 2, 80)); }
-        .text-primary { color: rgb(158, 2, 80); }
-        .border-primary { border-color: rgb(158, 2, 80); }
-    </style>
-</head>
-<body class="bg-gray-50" x-data="{ sidebarOpen: false }">
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0" 
-         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
-        
-        <!-- Logo -->
-        <div class="flex items-center justify-center h-16 bg-primary-gradient">
-            <h1 class="text-xl font-bold text-white">VoXY Admin</h1>
-        </div>
-        
-        <!-- Navigation -->
-        <nav class="mt-8">
-            <div class="px-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-chart-line w-5 h-5 mr-3"></i>
-                    Dashboard
-                </a>
-                
-                <a href="{{ route('admin.users') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors bg-gray-100 text-primary border-r-4 border-primary">
-                    <i class="fas fa-users w-5 h-5 mr-3"></i>
-                    Utilisateurs
-                </a>
-                
-                <a href="{{ route('admin.chorales') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-music w-5 h-5 mr-3"></i>
-                    Chorales
-                </a>
-                
-                <a href="{{ route('admin.partitions') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-file-music w-5 h-5 mr-3"></i>
-                    Partitions
-                </a>
-                
-                <a href="{{ route('admin.messes.index') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-church w-5 h-5 mr-3"></i>
-                    Messes
-                </a>
-                
-                <a href="{{ route('admin.vocalises.index') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-microphone w-5 h-5 mr-3"></i>
-                    Vocalises
-                </a>
-                
-                <a href="{{ route('admin.categories') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-tags w-5 h-5 mr-3"></i>
-                    Catégories
-                </a>
-            </div>
-        </nav>
+@extends('layouts.admin')
+
+@section('title', 'Gestion des Utilisateurs - VoXY Admin')
+@section('page-title', 'Gestion des Utilisateurs')
+
+@section('content')
+<div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Utilisateurs</h1>
+        <p class="text-gray-500 mt-1">Gérez les membres, approuvez les inscriptions et contrôlez les accès.</p>
     </div>
-    
-    <!-- Overlay mobile -->
-    <div x-show="sidebarOpen" 
-         class="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-         @click="sidebarOpen = false"></div>
-    
-    <!-- Contenu principal -->
-    <div class="lg:ml-64">
-        <!-- Navbar -->
-        <header class="bg-white shadow-sm border-b">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center">
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                    <h2 class="ml-4 lg:ml-0 text-2xl font-bold text-gray-800">Gestion des Utilisateurs</h2>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                            <span class="text-white text-sm font-medium">{{ substr(Auth::user()->name, 0, 1) }}</span>
+    <a href="{{ route('admin.users.create') }}" class="inline-flex items-center justify-center rounded-2xl bg-primary-gradient px-6 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90 transition-all">
+        <i class="fas fa-plus mr-2"></i> Nouvel Utilisateur
+    </a>
+</div>
+
+@if(session('success'))
+    <div class="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-700 px-6 py-4 rounded-2xl flex items-center shadow-sm animate-fade-in">
+        <i class="fas fa-check-circle mr-3 text-xl"></i>
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-6 bg-red-50 border border-red-100 text-red-700 px-6 py-4 rounded-2xl flex items-center shadow-sm animate-fade-in">
+        <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
+        <span class="font-medium">{{ session('error') }}</span>
+    </div>
+@endif
+
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50/50 border-b border-gray-100">
+                    <th class="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">Membre</th>
+                    <th class="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest hidden md:table-cell">Chorale</th>
+                    <th class="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest hidden lg:table-cell">Partie</th>
+                    <th class="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest">Statut</th>
+                    <th class="px-6 py-5 text-xs font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach($users as $user)
+                <tr class="group hover:bg-gray-50/50 transition-colors">
+                    <td class="px-8 py-5 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-12 w-12 shrink-0 rounded-2xl bg-primary-gradient p-[2px] shadow-sm transform group-hover:rotate-3 transition-transform">
+                                <div class="h-full w-full rounded-[14px] bg-white flex items-center justify-center">
+                                    <span class="text-primary font-black text-sm">{{ substr($user->name, 0, 1) }}</span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{{ $user->name }}</div>
+                                <div class="text-xs text-gray-500">{{ $user->email }}</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">{{ $user->phone }}</div>
+                            </div>
                         </div>
-                        <span class="font-medium text-gray-700">{{ Auth::user()->name }}</span>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Contenu -->
-        <main class="p-6">
-            @if(session('success'))
-                <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <div class="bg-white shadow-lg rounded-xl border border-gray-100">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">Liste des Utilisateurs</h3>
-                        <p class="text-sm text-gray-600">Approuver, rejeter et gérer les utilisateurs</p>
-                    </div>
-                    <a href="{{ route('admin.users.create') }}" class="bg-primary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Nouvel Utilisateur
-                    </a>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Utilisateur</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Chorale</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Partie vocale</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">État</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rôle</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach($users as $user)
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                                            <span class="text-white text-sm font-medium">{{ substr($user->name, 0, 1) }}</span>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $user->email }}</div>
-                                            <div class="text-xs text-gray-400">{{ $user->phone }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    @if($user->chorale)
-                                        {{ $user->chorale->name }}
-                                    @else
-                                        <span class="text-gray-400">-</span>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap hidden md:table-cell">
+                        @if($user->chorale)
+                            <div class="flex items-center text-sm text-gray-700">
+                                <div class="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
+                                {{ $user->chorale->name }}
+                            </div>
+                        @else
+                            <span class="text-xs text-gray-400 italic">Non assigné</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap hidden lg:table-cell">
+                        <span class="text-sm font-medium text-gray-600">{{ $user->voice_part ?? '-' }}</span>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap">
+                        <div class="flex flex-col gap-1.5">
+                            <span class="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                @if($user->status === 'approved') bg-emerald-100 text-emerald-700
+                                @elseif($user->status === 'pending') bg-amber-100 text-amber-700
+                                @else bg-red-100 text-red-700 @endif">
+                                @if($user->status === 'approved') Approuvé
+                                @elseif($user->status === 'pending') En attente
+                                @else Rejeté @endif
+                            </span>
+                            @if($user->role === 'admin')
+                                <span class="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
+                                    Administrateur
+                                </span>
+                            @endif
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex justify-end gap-2 px-2" x-data="{ open: false }">
+                            <div class="relative">
+                                <button @click="open = !open" class="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors text-gray-500">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div x-show="open" @click.away="open = false" 
+                                     class="absolute right-0 z-20 mt-2 w-48 rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden" x-cloak>
+                                    
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                                        <i class="fas fa-edit mr-3 text-blue-500 opacity-70"></i> Modifier
+                                    </a>
+                                    
+                                    @if($user->status === 'pending')
+                                        <form method="POST" action="{{ route('admin.users.approve', $user->id) }}" class="block">
+                                            @csrf
+                                            <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors">
+                                                <i class="fas fa-check mr-3 text-emerald-500 opacity-70"></i> Approuver
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.users.reject', $user->id) }}" class="block">
+                                            @csrf
+                                            <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 rounded-xl transition-colors">
+                                                <i class="fas fa-times mr-3 text-red-500 opacity-70"></i> Rejeter
+                                            </button>
+                                        </form>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    {{ $user->voice_part ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                        @if($user->status === 'approved') bg-green-100 text-green-800
-                                        @elseif($user->status === 'pending') bg-yellow-100 text-yellow-800
-                                        @else bg-red-100 text-red-800 @endif">
-                                        @if($user->status === 'approved') Approuvé
-                                        @elseif($user->status === 'pending') En attente
-                                        @else Rejeté @endif
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                        @if($user->is_active) bg-green-100 text-green-800
-                                        @else bg-gray-100 text-gray-800 @endif">
-                                        @if($user->is_active) Actif @else Inactif @endif
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                        @if($user->role === 'admin') bg-purple-100 text-purple-800
-                                        @else bg-gray-100 text-gray-800 @endif">
-                                        @if($user->role === 'admin') Admin @else Utilisateur @endif
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-2">
-                                        <a href="{{ route('admin.users.edit', $user->id) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                            <i class="fas fa-edit mr-1"></i>Éditer
-                                        </a>
-                                        
-                                        @if($user->status === 'pending')
-                                            <form method="POST" action="{{ route('admin.users.approve', $user->id) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                    <i class="fas fa-check mr-1"></i>Approuver
-                                                </button>
-                                            </form>
-                                            <form method="POST" action="{{ route('admin.users.reject', $user->id) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                    <i class="fas fa-times mr-1"></i>Rejeter
-                                                </button>
-                                            </form>
-                                        @endif
-                                        
-                                        @if($user->is_active)
-                                            <form method="POST" action="{{ route('admin.users.deactivate', $user->id) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                    <i class="fas fa-pause mr-1"></i>Désactiver
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="{{ route('admin.users.activate', $user->id) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                    <i class="fas fa-play mr-1"></i>Activer
-                                                </button>
-                                            </form>
-                                        @endif
-                                        
-                                        @if($user->id !== Auth::id())
-                                            <form method="POST" action="{{ route('admin.users.delete', $user->id) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
-                                                @csrf
-                                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
-                                                    <i class="fas fa-trash mr-1"></i>Supprimer
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                
-                @if($users->hasPages())
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        {{ $users->links() }}
-                    </div>
-                @endif
-            </div>
-        </main>
+
+                                    @if($user->is_active)
+                                        <form method="POST" action="{{ route('admin.users.deactivate', $user->id) }}" class="block">
+                                            @csrf
+                                            <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 rounded-xl transition-colors">
+                                                <i class="fas fa-pause mr-3 text-orange-500 opacity-70"></i> Désactiver
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.users.activate', $user->id) }}" class="block">
+                                            @csrf
+                                            <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-xl transition-colors">
+                                                <i class="fas fa-play mr-3 text-blue-500 opacity-70"></i> Activer
+                                            </button>
+                                        </form>
+                                    @endif
+                                    
+                                    <div class="h-px bg-gray-100 my-1"></div>
+                                    
+                                    @if($user->id !== Auth::id())
+                                        <form method="POST" action="{{ route('admin.users.delete', $user->id) }}" class="block" onsubmit="return confirm('Supprimer cet utilisateur ?')">
+                                            @csrf
+                                            <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors font-bold">
+                                                <i class="fas fa-trash-alt mr-3 opacity-70"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-</body>
-</html>
+    
+    @if($users->hasPages())
+    <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100">
+        {{ $users->links() }}
+    </div>
+    @endif
+</div>
+@endsection

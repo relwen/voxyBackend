@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Chorale;
 use App\Models\Category;
@@ -177,25 +176,15 @@ class AuthController extends Controller
 
         // Récupérer l'utilisateur manuellement pour déboguer
         $user = User::where('email', $request->email)->first();
-        
+
         if (!$user) {
-            Log::info('Login maestro échoué: utilisateur non trouvé', ['email' => $request->email]);
             return back()->withErrors([
                 'email' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
             ])->withInput($request->only('email'));
         }
 
-        Log::info('Login maestro: utilisateur trouvé', [
-            'email' => $user->email,
-            'role' => $user->role,
-            'status' => $user->status,
-            'is_active' => $user->is_active,
-            'chorale_id' => $user->chorale_id
-        ]);
-
         // Vérifier le mot de passe manuellement
         if (!Hash::check($request->password, $user->password)) {
-            Log::info('Login maestro échoué: mot de passe incorrect', ['email' => $request->email]);
             return back()->withErrors([
                 'email' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
             ])->withInput($request->only('email'));
@@ -203,7 +192,6 @@ class AuthController extends Controller
 
         // Vérifier que le compte est actif
         if (!$user->is_active) {
-            Log::info('Login maestro échoué: compte désactivé', ['email' => $request->email]);
             return back()->withErrors([
                 'email' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.',
             ])->withInput($request->only('email'));
@@ -211,7 +199,6 @@ class AuthController extends Controller
 
         // Vérifier le statut
         if ($user->status !== 'approved') {
-            Log::info('Login maestro échoué: compte non approuvé', ['email' => $request->email, 'status' => $user->status]);
             return back()->withErrors([
                 'email' => 'Votre compte n\'est pas encore approuvé.',
             ])->withInput($request->only('email'));
@@ -219,7 +206,6 @@ class AuthController extends Controller
 
         // Vérifier que c'est un maestro
         if ($user->role !== 'maestro') {
-            Log::info('Login maestro échoué: rôle incorrect', ['email' => $request->email, 'role' => $user->role]);
             return back()->withErrors([
                 'email' => 'Accès refusé. Cette page est réservée aux maestros de chorale.',
             ])->withInput($request->only('email'));
@@ -227,10 +213,6 @@ class AuthController extends Controller
 
         // Vérifier que le maestro a une chorale
         if (!$user->chorale_id || !$user->chorale) {
-            Log::info('Login maestro échoué: aucune chorale associée', [
-                'email' => $request->email,
-                'chorale_id' => $user->chorale_id
-            ]);
             return back()->withErrors([
                 'email' => 'Aucune chorale associée à votre compte. Veuillez contacter l\'administrateur.',
             ])->withInput($request->only('email'));
@@ -239,9 +221,7 @@ class AuthController extends Controller
         // Connecter l'utilisateur
         Auth::login($user, $request->has('remember'));
         $request->session()->regenerate();
-        
-        Log::info('Login maestro réussi', ['email' => $user->email]);
-        
+
         return redirect()->intended('/admin/chorale/config');
     }
 

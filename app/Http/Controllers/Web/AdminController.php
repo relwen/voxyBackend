@@ -844,4 +844,87 @@ class AdminController extends Controller
         
         return back()->with('success', 'Utilisateur supprimé avec succès.');
     }
+
+    /**
+     * Promouvoir un utilisateur au rang de Maestro
+     */
+    public function maestroMakeMaestro($id)
+    {
+        $currentUser = Auth::user();
+        $user = User::findOrFail($id);
+        
+        // Vérifier que l'utilisateur appartient à la chorale du maestro
+        if ($user->chorale_id !== $currentUser->chorale_id) {
+            return back()->with('error', 'Vous n\'avez pas le droit de modifier cet utilisateur.');
+        }
+        
+        $user->update(['role' => 'maestro']);
+        
+        return back()->with('success', $user->name . ' est maintenant Maestro.');
+    }
+
+    /**
+     * Rétrograder un Maestro au rang d'utilisateur simple
+     */
+    public function maestroMakeUser($id)
+    {
+        $currentUser = Auth::user();
+        $user = User::findOrFail($id);
+        
+        // Vérifier que l'utilisateur appartient à la chorale du maestro
+        if ($user->chorale_id !== $currentUser->chorale_id) {
+            return back()->with('error', 'Vous n\'avez pas le droit de modifier cet utilisateur.');
+        }
+
+        // Empêcher de se rétrograder soi-même s'il n'y a pas d'autre maestro ? (Optionnel)
+        if ($user->id === $currentUser->id) {
+            return back()->with('error', 'Vous ne pouvez pas vous rétrograder vous-même ici.');
+        }
+        
+        $user->update(['role' => 'user']);
+        
+        return back()->with('success', $user->name . ' est maintenant un utilisateur simple.');
+    }
+
+    /**
+     * Redirection vers la rubrique Messes
+     */
+    public function messes()
+    {
+        $user = Auth::user();
+        if (!$user->chorale_id) {
+            return redirect()->route('admin.categories')->with('info', 'Sélectionnez une catégorie de type Messes.');
+        }
+
+        $category = Category::where('chorale_id', $user->chorale_id)
+            ->where('name', 'LIKE', '%messes%')
+            ->first();
+
+        if ($category) {
+            return redirect()->route('admin.rubriques.show', $category->id);
+        }
+
+        return redirect()->route('admin.chorale.config')->with('error', 'Rubrique "Messes" non trouvée. Veuillez la créer dans la configuration.');
+    }
+
+    /**
+     * Redirection vers la rubrique Vocalises
+     */
+    public function vocalises()
+    {
+        $user = Auth::user();
+        if (!$user->chorale_id) {
+            return redirect()->route('admin.categories')->with('info', 'Sélectionnez une catégorie de type Vocalises.');
+        }
+
+        $category = Category::where('chorale_id', $user->chorale_id)
+            ->where('name', 'LIKE', '%vocalises%')
+            ->first();
+
+        if ($category) {
+            return redirect()->route('admin.rubriques.show', $category->id);
+        }
+
+        return redirect()->route('admin.chorale.config')->with('error', 'Rubrique "Vocalises" non trouvée. Veuillez la créer dans la configuration.');
+    }
 } 

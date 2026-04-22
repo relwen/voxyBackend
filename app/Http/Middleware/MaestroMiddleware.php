@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Log;
 
 class MaestroMiddleware
 {
@@ -17,17 +16,6 @@ class MaestroMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        
-        // Log pour déboguer
-        Log::info('MaestroMiddleware - Vérification accès', [
-            'path' => $request->path(),
-            'user_id' => $user?->id,
-            'user_role' => $user?->role,
-            'user_email' => $user?->email,
-            'expects_json' => $request->expectsJson(),
-            'wants_json' => $request->wantsJson(),
-            'ajax' => $request->ajax(),
-        ]);
 
         if (!$user) {
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
