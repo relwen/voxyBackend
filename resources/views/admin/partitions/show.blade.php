@@ -85,6 +85,12 @@
                                 </span>
                             @endif
                         </div>
+                        @if($partition->user)
+                            <div class="mt-3 text-xs text-gray-400 flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-bold uppercase text-[9px] tracking-wider">Auteur</span>
+                                <span class="italic">Ajouté par <strong>{{ $partition->user->name }}</strong> le {{ $partition->created_at->format('d/m/Y') }}</span>
+                            </div>
+                        @endif
                     </div>
                     <div class="flex space-x-3">
                         <a href="{{ route('admin.partitions.edit', $partition->id) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">

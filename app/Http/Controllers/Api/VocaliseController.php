@@ -46,7 +46,7 @@ class VocaliseController extends Controller
             // Récupérer les sections/dossiers de la rubrique "Vocalises"
             $sections = RubriqueSection::where('category_id', $vocalisesRubrique->id)
                 ->whereNull('dossier_id')
-                ->with(['partitions.pupitre', 'sections.partitions.pupitre'])
+                ->with(['partitions.pupitre', 'partitions.user', 'sections.partitions.pupitre', 'sections.partitions.user'])
                 ->ordered()
                 ->get()
                 ->map(function($section) {
@@ -153,6 +153,7 @@ class VocaliseController extends Controller
             ] : null,
             'voice_part' => $partition->pupitre?->nom ?? 'Tous',
             'vocalise_part' => $partition->vocalise_part ?? null,
+            'user_name' => $partition->user->name ?? null,
             'created_at' => $partition->created_at ? $partition->created_at->toISOString() : now()->toISOString(),
             'updated_at' => $partition->updated_at ? $partition->updated_at->toISOString() : now()->toISOString(),
         ];
@@ -378,7 +379,7 @@ class VocaliseController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $section = RubriqueSection::with(['partitions.pupitre', 'sections.partitions.pupitre', 'category'])
+        $section = RubriqueSection::with(['partitions.pupitre', 'partitions.user', 'sections.partitions.pupitre', 'sections.partitions.user', 'category'])
             ->findOrFail($id);
         
         $vocalises = $this->convertPartitionsToVocalises($section->partitions ?? []);
@@ -559,13 +560,14 @@ class VocaliseController extends Controller
             $data['files'] = $filePaths;
         }
         
-        // Ajouter vocalise_part au format JSON si part est fourni
         if ($request->has('part') && !empty($request->part)) {
             $data['vocalise_part'] = [
                 'part' => $request->part,
                 'subPart' => $request->subPart ?? null,
             ];
         }
+
+        $data['user_id'] = Auth::id();
         
         $partition = Partition::create($data);
         $partition->load('pupitre');

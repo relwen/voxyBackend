@@ -23,6 +23,7 @@ class Partition extends Model
         'messe_id',
         'chorale_id',
         'pupitre_id', // Relation vers chorale_pupitres
+        'user_id', // Celui qui a enregistré la partition
         'pupitre', // Gardé pour migration
         // Anciens champs gardés pour rétrocompatibilité
         'audio_path',
@@ -91,6 +92,14 @@ class Partition extends Model
     public function rubriqueSection()
     {
         return $this->belongsTo(RubriqueSection::class, 'rubrique_section_id');
+    }
+
+    /**
+     * Relation avec l'utilisateur qui a créé la partition
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

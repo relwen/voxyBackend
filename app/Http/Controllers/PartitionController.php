@@ -16,7 +16,7 @@ class PartitionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Partition::with(['category', 'chorale'])->orderBy('created_at', 'desc');
+        $query = Partition::with(['category', 'chorale', 'user'])->orderBy('created_at', 'desc');
         
         // Filtrer par catégorie si spécifiée
         if ($request->has('category_id')) {
@@ -32,6 +32,7 @@ class PartitionController extends Controller
                     'files_with_metadata' => $partition->files_with_metadata,
                     'category_name' => $partition->category->name ?? null,
                     'chorale_name' => $partition->chorale->name ?? null,
+                    'user_name' => $partition->user->name ?? null,
                 ]);
             })
         ]);
@@ -108,6 +109,8 @@ class PartitionController extends Controller
             }
             $data['files'] = $filePaths;
         }
+
+        $data['user_id'] = Auth::id();
 
         $partition = Partition::create($data);
 
@@ -247,7 +250,7 @@ class PartitionController extends Controller
     {
         $lastSync = $request->get('last_sync', '1970-01-01 00:00:00');
         
-        $partitions = Partition::with(['category', 'chorale'])
+        $partitions = Partition::with(['category', 'chorale', 'user'])
             ->where('updated_at', '>', $lastSync)
             ->orderBy('updated_at', 'asc')
             ->get();
@@ -259,6 +262,7 @@ class PartitionController extends Controller
                     'files_with_metadata' => $partition->files_with_metadata,
                     'category_name' => $partition->category->name ?? null,
                     'chorale_name' => $partition->chorale->name ?? null,
+                    'user_name' => $partition->user->name ?? null,
                 ]);
             }),
             'last_sync' => now()->toDateTimeString()

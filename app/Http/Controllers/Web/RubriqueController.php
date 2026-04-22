@@ -382,6 +382,7 @@ class RubriqueController extends Controller
             'rubrique_section_id' => null, // Pas de section
             'chorale_id' => $chorale->id,
             'pupitre_id' => $pupitreId,
+            'user_id' => Auth::id(),
             'files' => $filePaths,
         ]);
 
@@ -477,6 +478,7 @@ class RubriqueController extends Controller
             'rubrique_section_id' => $messe->id,
             'chorale_id' => $chorale->id,
             'pupitre_id' => $pupitreId,
+            'user_id' => Auth::id(),
             'files' => $filePaths,
         ];
         
@@ -576,6 +578,7 @@ class RubriqueController extends Controller
             'rubrique_section_id' => $section->id,
             'chorale_id' => $chorale->id,
             'pupitre_id' => $pupitreId,
+            'user_id' => Auth::id(),
             'files' => $filePaths,
         ]);
 
@@ -746,6 +749,7 @@ class RubriqueController extends Controller
             'audio_path' => $audioPath,
             'chorale_id' => $chorale->id,
             'rubrique_section_id' => $section->id,
+            'user_id' => Auth::id(),
         ];
         
         // Ajouter vocalise_part seulement si part est fourni

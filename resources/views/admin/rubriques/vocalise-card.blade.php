@@ -45,5 +45,12 @@
             </p>
         </div>
     @endif
+
+    @if($vocalise->user)
+        <div class="mt-2 text-[10px] text-gray-400 font-medium italic flex items-center gap-1 opacity-70">
+            <i class="fas fa-user-edit text-[8px]"></i>
+            Enregistré par {{ $vocalise->user->name }}
+        </div>
+    @endif
 </div>
 

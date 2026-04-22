@@ -20,7 +20,7 @@
     @endif
 
     @if($partition->files && count($partition->files) > 0)
-        <div class="flex flex-wrap gap-2 mb-6">
+        <div class="flex flex-wrap gap-2 mb-4">
             @foreach(array_slice($partition->files, 0, 2) as $file)
                 @php
                     $icon = \App\Helpers\FileHelper::getFileIcon($file['name'] ?? $file);
@@ -35,6 +35,13 @@
                     +{{ count($partition->files) - 2 }}
                 </div>
             @endif
+        </div>
+    @endif
+
+    @if($partition->user)
+        <div class="mb-4 text-[9px] text-gray-400 font-bold uppercase tracking-tighter flex items-center gap-1.5 opacity-60">
+            <div class="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+            Par {{ $partition->user->name }}
         </div>
     @endif
 

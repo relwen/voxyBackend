@@ -17,6 +17,7 @@ class Vocalise extends Model
         'chorale_id',
         'rubrique_section_id',
         'vocalise_part',
+        'user_id',
     ];
 
     /**
@@ -53,6 +54,14 @@ class Vocalise extends Model
     public function pupitre()
     {
         return $this->belongsTo(ChoralePupitre::class, 'pupitre_id');
+    }
+
+    /**
+     * Relation avec l'utilisateur qui a créé la vocalise
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

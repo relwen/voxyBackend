@@ -285,6 +285,8 @@ class AdminController extends Controller
             $data['files'] = $filePaths;
         }
 
+        $data['user_id'] = Auth::id();
+
         try {
             Partition::create($data);
             return redirect()->route('admin.partitions')->with('success', 'Partition créée avec succès.');
