@@ -51,6 +51,7 @@ class SearchController extends Controller
                     'pupitre_id' => $partition->pupitre_id,
                     'pupitre_name' => $partition->pupitre?->nom,
                     'files' => $partition->files ?? [],
+                    'user_name' => $partition->user->name ?? null,
                     'created_at' => $partition->created_at,
                     'updated_at' => $partition->updated_at,
                 ];
@@ -79,6 +80,7 @@ class SearchController extends Controller
                     'description' => $vocalise->description,
                     'voice_part' => $vocalise->pupitre?->nom ?? 'Tous',
                     'files' => $vocalise->files ?? [],
+                    'user_name' => $vocalise->user->name ?? null,
                     'created_at' => $vocalise->created_at,
                     'updated_at' => $vocalise->updated_at,
                 ];
@@ -127,7 +129,7 @@ class SearchController extends Controller
                     $query->where('chorale_id', $choraleId);
                 });
             })
-            ->with(['category', 'pupitre', 'rubriqueSection'])
+            ->with(['category', 'pupitre', 'rubriqueSection', 'user'])
             ->limit(50)
             ->get()
             ->map(function($chant) {
@@ -150,6 +152,7 @@ class SearchController extends Controller
                     'tenor_files' => $this->getFilesByPupitre($chant->files ?? [], 'Ténor'),
                     'basse_files' => $this->getFilesByPupitre($chant->files ?? [], 'Basse'),
                     'tutti_files' => $this->getFilesByPupitre($chant->files ?? [], 'Tutti'),
+                    'user_name' => $chant->user->name ?? null,
                     'created_at' => $chant->created_at,
                     'updated_at' => $chant->updated_at,
                 ];

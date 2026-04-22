@@ -467,7 +467,7 @@ class VocaliseController extends Controller
     public function vocalises($id): JsonResponse
     {
         try {
-            $section = RubriqueSection::with('partitions.pupitre')
+            $section = RubriqueSection::with(['partitions.pupitre', 'partitions.user'])
                 ->findOrFail($id);
             
             $vocalises = $this->convertPartitionsToVocalises($section->partitions ?? []);

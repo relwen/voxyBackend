@@ -37,7 +37,7 @@ class MesseController extends Controller
         
         // Récupérer les messes (sections de la rubrique "Messes")
         $messes = RubriqueSection::where('category_id', $messesRubrique->id)
-            ->with(['partitions.pupitre'])
+            ->with(['partitions.pupitre', 'partitions.user'])
             ->orderBy('nom')
             ->get()
             ->map(function($section) {
@@ -106,6 +106,9 @@ class MesseController extends Controller
                         'icon' => $partition->pupitre->icon,
                     ];
                 }
+                
+                // Ajouter le nom de l'utilisateur
+                $data['user_name'] = $partition->user->name ?? null;
                 
                 return $data;
             })->values()->toArray();
@@ -185,7 +188,7 @@ class MesseController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $section = RubriqueSection::with(['partitions.pupitre', 'category'])
+        $section = RubriqueSection::with(['partitions.pupitre', 'partitions.user', 'category'])
             ->findOrFail($id);
         
         return response()->json([
@@ -252,7 +255,7 @@ class MesseController extends Controller
     public function sections($id): JsonResponse
     {
         try {
-            $section = RubriqueSection::with(['partitions.pupitre'])
+            $section = RubriqueSection::with(['partitions.pupitre', 'partitions.user'])
                 ->findOrFail($id);
             
             $references = $this->convertStructureToReferences($section->structure ?? [], $section->partitions ?? []);
@@ -282,7 +285,7 @@ class MesseController extends Controller
             // Cette méthode est pour compatibilité avec l'ancien système
             // Dans le nouveau système, les partitions sont liées directement aux sections via messe_part
             $partitions = Partition::where('rubrique_section_id', $referenceId)
-                ->with(['pupitre'])
+                ->with(['pupitre', 'user'])
                 ->get();
 
             // Formater les partitions avec les fichiers et métadonnées
@@ -320,6 +323,9 @@ class MesseController extends Controller
                         Log::warning('Erreur lors de la récupération du pupitre pour partition ' . $partition->id . ': ' . $e->getMessage());
                         $data['pupitre'] = null;
                     }
+                    
+                    // Ajouter le nom de l'utilisateur
+                    $data['user_name'] = $partition->user->name ?? null;
                     
                     return $data;
                 } catch (\Exception $e) {

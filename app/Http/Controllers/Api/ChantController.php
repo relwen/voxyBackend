@@ -44,7 +44,7 @@ class ChantController extends Controller
             // Récupérer les sections (dossiers) de la catégorie "Chants"
             $sections = \App\Models\RubriqueSection::where('category_id', $chantsRubrique->id)
                 ->whereNull('dossier_id') // Sections de premier niveau
-                ->with(['partitions.pupitre'])
+                ->with(['partitions.pupitre', 'partitions.user'])
                 ->orderBy('nom')
                 ->get()
                 ->map(function($section) {
@@ -164,6 +164,8 @@ class ChantController extends Controller
                 'tenor_files' => !empty($tenorFiles) ? $tenorFiles : null,
                 'basse_files' => !empty($basseFiles) ? $basseFiles : null,
                 'tutti_files' => !empty($tuttiFiles) ? $tuttiFiles : null,
+                'userName' => $partition->user->name ?? null,
+                'user_name' => $partition->user->name ?? null,
                 'ordre' => $partition->order ?? 0,
                 'active' => true,
                 'created_at' => $partition->created_at ? $partition->created_at->toISOString() : now()->toISOString(),
@@ -190,6 +192,7 @@ class ChantController extends Controller
                 'tenor_files' => null,
                 'basse_files' => null,
                 'tutti_files' => null,
+                'user_name' => $partition->user->name ?? null,
                 'ordre' => 0,
                 'active' => true,
                 'created_at' => now()->toISOString(),
@@ -325,7 +328,7 @@ class ChantController extends Controller
                     $query->where('name', 'Chants')
                           ->where('chorale_id', $choraleId);
                 })
-                ->with(['partitions.pupitre'])
+                ->with(['partitions.pupitre', 'partitions.user'])
                 ->first();
             
             if (!$section) {
