@@ -156,8 +156,11 @@
         }
 
         function deletePartition(id) {
+            console.log('Tentative de suppression de la partition:', id);
             if (confirm('Êtes-vous sûr de vouloir supprimer cette partition ? Cette action est irréversible.')) {
-                fetch(`/admin/partitions/${id}/delete`, {
+                const url = `/admin/partitions/${id}/delete`;
+                console.log('Envoi de la requête POST vers:', url);
+                fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
