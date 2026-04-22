@@ -87,6 +87,7 @@ Route::middleware(['auth', 'maestro'])->group(function () {
     Route::get('/admin/partitions/{id}', [WebAdminController::class, 'showPartition'])->name('admin.partitions.show');
     Route::get('/admin/partitions/{id}/edit', [WebAdminController::class, 'editPartition'])->name('admin.partitions.edit');
     Route::post('/admin/partitions/{id}/update', [WebAdminController::class, 'updatePartition'])->name('admin.partitions.update');
+    Route::post('/admin/partitions/{id}/delete', [WebAdminController::class, 'deletePartition'])->name('admin.partitions.delete');
     
     // Gestion des utilisateurs pour les maestros
     Route::get('/admin/maestro/users', [WebAdminController::class, 'maestroUsers'])->name('admin.maestro.users');
@@ -103,8 +104,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/partitions', [WebAdminController::class, 'partitions'])->name('admin.partitions');
     Route::get('/admin/partitions/create', [WebAdminController::class, 'createPartition'])->name('admin.partitions.create');
     Route::post('/admin/partitions', [WebAdminController::class, 'storePartition'])->name('admin.partitions.store');
-    // Note: Les routes show, edit et update sont dans le groupe maestro pour permettre l'accès aux maestros
-    Route::post('/admin/partitions/{id}/delete', [WebAdminController::class, 'deletePartition'])->name('admin.partitions.delete');
+    // Note: Les routes show, edit, update et delete sont dans le groupe maestro pour permettre l'accès aux maestros
     
     // Gestion des catégories
     Route::get('/admin/categories', [WebAdminController::class, 'categories'])->name('admin.categories');

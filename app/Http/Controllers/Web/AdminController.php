@@ -455,8 +455,21 @@ class AdminController extends Controller
      */
     public function deletePartition($id)
     {
+        $user = Auth::user();
         $partition = Partition::findOrFail($id);
         
+        // Vérifier que l'utilisateur a accès à cette partition
+        // Si c'est un maestro, vérifier que la partition appartient à sa chorale
+        if ($user->role === 'maestro' && $user->chorale_id && $partition->chorale_id !== $user->chorale_id) {
+            if (request()->expectsJson() || request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé. Cette partition n\'appartient pas à votre chorale.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Accès refusé. Cette partition n\'appartient pas à votre chorale.');
+        }
+
         // Supprimer tous les fichiers associés (nouveau système unifié)
         if ($partition->files) {
             foreach ($partition->files as $item) {
@@ -486,6 +499,13 @@ class AdminController extends Controller
         }
         
         $partition->delete();
+
+        if (request()->expectsJson() || request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Partition supprimée avec succès.'
+            ]);
+        }
 
         return back()->with('success', 'Partition supprimée avec succès.');
     }

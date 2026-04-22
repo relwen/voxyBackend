@@ -38,14 +38,18 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-2 gap-3 pt-6 border-t border-gray-50">
+    <div class="grid grid-cols-3 gap-2 pt-6 border-t border-gray-50">
         <button onclick="viewPartition({{ $partition->id }})" 
-                class="flex items-center justify-center gap-2 bg-gray-50 hover:bg-primary-gradient hover:text-white text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-            <i class="fas fa-eye"></i> VOIR
+                class="flex items-center justify-center gap-2 bg-gray-50 hover:bg-primary-gradient hover:text-white text-gray-400 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all" title="VOIR">
+            <i class="fas fa-eye"></i>
         </button>
         <button onclick="editPartition({{ $partition->id }})" 
-                class="flex items-center justify-center gap-2 bg-gray-50 hover:bg-blue-500 hover:text-white text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-            <i class="fas fa-edit"></i> EDITER
+                class="flex items-center justify-center gap-2 bg-gray-50 hover:bg-blue-500 hover:text-white text-gray-400 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all" title="EDITER">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="deletePartition({{ $partition->id }})" 
+                class="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-500 hover:text-white text-red-400 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all" title="SUPPRIMER">
+            <i class="fas fa-trash"></i>
         </button>
     </div>
 </div>

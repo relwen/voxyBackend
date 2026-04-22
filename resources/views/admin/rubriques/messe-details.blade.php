@@ -293,9 +293,6 @@
             else alert(data.message || 'Erreur');
         });
     };
-
-    function viewPartition(id) { window.location.href = `/admin/partitions/${id}`; }
-    function editPartition(id) { window.location.href = `/admin/partitions/${id}/edit`; }
 </script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
