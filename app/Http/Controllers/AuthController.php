@@ -496,4 +496,31 @@ class AuthController extends Controller
             'profile_incomplete' => !$profileComplete
         ]);
     }
+
+    /**
+     * Mettre à jour le token FCM de l'utilisateur
+     */
+    public function updateFCMToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'fcm_token' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Données invalides',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = Auth::user();
+        $user->fcm_token = $request->fcm_token;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token FCM mis à jour avec succès'
+        ]);
+    }
 }

@@ -27,7 +27,8 @@ class User extends Authenticatable
         'status',
         'is_active',
         'chorale_id',
-        'voice_part'
+        'voice_part',
+        'fcm_token'
     ];
 
     /**

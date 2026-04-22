@@ -37,6 +37,7 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::post("/logout", [AuthController::class, "logout"]);
     Route::get("/me", [AuthController::class, "me"]);
     Route::put("/me", [AuthController::class, "updateProfile"]);
+    Route::post("/update-fcm-token", [AuthController::class, "updateFCMToken"]);
 
     // Admin routes
     Route::middleware("admin")->group(function () {
