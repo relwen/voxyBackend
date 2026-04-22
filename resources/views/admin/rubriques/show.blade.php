@@ -173,8 +173,8 @@
             
             <form @submit.prevent="window.createMesse()" class="space-y-6">
                 <div>
-                    <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Nom / Titre *</label>
-                    <input type="text" x-model="messeForm.nom" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold">
+                    <label class="premium-label">Nom / Titre *</label>
+                    <input type="text" x-model="messeForm.nom" required class="premium-input">
                 </div>
 
                 <div class="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl">
@@ -184,7 +184,7 @@
 
                 <div x-show="messeForm.hasParts" x-cloak class="space-y-4 pt-4 border-t border-gray-100">
                     <div class="flex items-center justify-between">
-                        <label class="text-xs font-black uppercase tracking-widest text-gray-400">Structure des parties</label>
+                        <label class="premium-label">Structure des parties</label>
                         <button type="button" @click="addPart()" class="text-xs font-black text-primary uppercase">
                             <i class="fas fa-plus mr-1"></i> Ajouter une partie
                         </button>
@@ -194,7 +194,7 @@
                         <template x-for="(part, index) in messeForm.parts" :key="index">
                             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
                                 <div class="flex items-center gap-3">
-                                    <input type="text" x-model="part.nom" placeholder="Nom de la partie" class="flex-1 bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm">
+                                    <input type="text" x-model="part.nom" placeholder="Nom de la partie" class="flex-1 premium-input !py-2 !px-4 !rounded-xl !text-sm">
                                     <button type="button" @click="removePart(index)" class="text-red-400 hover:text-red-600">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -211,7 +211,7 @@
                                 <div x-show="part.hasSubParts" class="mt-3 pl-6 space-y-2">
                                     <template x-for="(subPart, subIndex) in part.subParts" :key="subIndex">
                                         <div class="flex items-center gap-2">
-                                            <input type="text" x-model="subPart.nom" placeholder="Sous-élément" class="flex-1 bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-xs">
+                                            <input type="text" x-model="subPart.nom" placeholder="Sous-élément" class="flex-1 premium-input !py-1.5 !px-3 !rounded-lg !text-xs">
                                             <button type="button" @click="removePart(subIndex, index)" class="text-red-300 hover:text-red-500 text-xs">
                                                 <i class="fas fa-times"></i>
                                             </button>

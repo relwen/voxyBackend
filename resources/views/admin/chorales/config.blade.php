@@ -212,12 +212,12 @@
             <form id="pupitre-form" @submit.prevent="savePupitre()">
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Nom du pupitre *</label>
-                        <input type="text" name="nom" id="pupitre-nom" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all" placeholder="Ex: Soprano, Alto, Ténor...">
+                        <label class="premium-label">Nom du pupitre *</label>
+                        <input type="text" name="nom" id="pupitre-nom" required class="premium-input" placeholder="Ex: Soprano, Alto, Ténor...">
                     </div>
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Description</label>
-                        <textarea name="description" id="pupitre-description" rows="2" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none" placeholder="Brève description..."></textarea>
+                        <label class="premium-label">Description</label>
+                        <textarea name="description" id="pupitre-description" rows="2" class="premium-input resize-none" placeholder="Brève description..."></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -225,8 +225,8 @@
                             <input type="color" name="color" id="pupitre-color" class="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl p-1 cursor-pointer">
                         </div>
                         <div>
-                            <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Icône (FA)</label>
-                            <input type="text" name="icon" id="pupitre-icon" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all" placeholder="ex: music">
+                            <label class="premium-label">Icône (FA)</label>
+                            <input type="text" name="icon" id="pupitre-icon" class="premium-input" placeholder="ex: music">
                         </div>
                     </div>
                     <div class="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl">
@@ -254,12 +254,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Nom de la rubrique *</label>
-                                <input type="text" name="name" id="category-name" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all" placeholder="Ex: Messes de Noël, Chants Marials...">
+                                <label class="premium-label">Nom de la rubrique *</label>
+                                <input type="text" name="name" id="category-name" required class="premium-input" placeholder="Ex: Messes de Noël, Chants Marials...">
                             </div>
                             <div>
-                                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Type d'organisation *</label>
-                                <select name="structure_type" id="category-structure-type" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all appearance-none" onchange="updateStructureHelp()">
+                                <label class="premium-label">Type d'organisation *</label>
+                                <select name="structure_type" id="category-structure-type" required class="premium-input appearance-none" onchange="updateStructureHelp()">
                                     <option value="simple">Partitions directes</option>
                                     <option value="with_sections">Avec sections (ex: Kyrie...)</option>
                                     <option value="with_dossiers">Avec dossiers thématiques</option>
@@ -300,8 +300,8 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Description</label>
-                        <textarea name="description" id="category-description" rows="3" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none"></textarea>
+                        <label class="premium-label">Description</label>
+                        <textarea name="description" id="category-description" rows="3" class="premium-input resize-none"></textarea>
                     </div>
                 </div>
                 <div class="mt-8 flex gap-3">

@@ -100,7 +100,7 @@
                             <div class="space-y-4">
                                 <div class="relative group">
                                     <input type="text" name="name" required value="{{ old('name') }}"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Votre nom complet">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-user"></i>
@@ -109,7 +109,7 @@
                                 
                                 <div class="relative group">
                                     <input type="email" name="email" required value="{{ old('email') }}"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Votre adresse email">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-envelope"></i>
@@ -120,7 +120,7 @@
                             <div class="space-y-4">
                                 <div class="relative group">
                                     <input type="password" name="password" required
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Mot de passe (8 caractères min)">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-lock"></i>
@@ -129,7 +129,7 @@
                                 
                                 <div class="relative group">
                                     <input type="password" name="password_confirmation" required
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Confirmer le mot de passe">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-shield-alt"></i>
@@ -140,7 +140,7 @@
                             <div class="md:col-span-2">
                                 <div class="relative group">
                                     <input type="tel" name="phone" required value="{{ old('phone') }}"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Téléphone (ex: +243 820 000 000)">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-phone"></i>
@@ -162,7 +162,7 @@
                         <div class="space-y-4">
                             <div class="relative group">
                                 <input type="text" name="chorale_name" required value="{{ old('chorale_name') }}"
-                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow text-lg font-bold"
+                                    class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white text-lg font-bold"
                                     placeholder="Nom de votre chorale">
                                 <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                     <i class="fas fa-users"></i>
@@ -172,7 +172,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="relative group">
                                     <input type="text" name="chorale_location" value="{{ old('chorale_location') }}"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white"
                                         placeholder="Localisation (ex: Paris, France)">
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-map-marker-alt"></i>
@@ -180,7 +180,7 @@
                                 </div>
                                 <div class="relative group">
                                     <textarea name="chorale_description" rows="1"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/30 outline-none transition-all input-glow resize-none"
+                                        class="w-full bg-white border-2 border-white/20 rounded-2xl px-6 py-4 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-white/60 focus:bg-white resize-none"
                                         placeholder="Bref résumé ou slogan...">{{ old('chorale_description') }}</textarea>
                                     <div class="absolute right-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
                                         <i class="fas fa-quote-right"></i>

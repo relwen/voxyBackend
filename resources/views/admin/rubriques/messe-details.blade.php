@@ -199,12 +199,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Titre de la partition *</label>
-                            <input type="text" name="title" x-model="partitionForm.title" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold">
+                            <label class="premium-label">Titre de la partition *</label>
+                            <input type="text" name="title" x-model="partitionForm.title" required class="premium-input">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Pupitre cible</label>
-                            <select name="pupitre_id" x-model="partitionForm.pupitre_id" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold appearance-none">
+                            <label class="premium-label">Pupitre cible</label>
+                            <select name="pupitre_id" x-model="partitionForm.pupitre_id" class="premium-input appearance-none">
                                 <option value="">Tous les pupitres (Tutti)</option>
                                 @foreach($pupitres as $pupitre)
                                     <option value="{{ $pupitre->id }}">{{ $pupitre->nom }}</option>
@@ -213,8 +213,8 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Description</label>
-                        <textarea name="description" x-model="partitionForm.description" rows="5" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-gray-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none"></textarea>
+                        <label class="premium-label">Description</label>
+                        <textarea name="description" x-model="partitionForm.description" rows="5" class="premium-input resize-none"></textarea>
                     </div>
                 </div>
 

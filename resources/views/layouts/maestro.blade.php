@@ -54,6 +54,37 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+
+        .premium-input {
+            width: 100%;
+            background-color: white !important;
+            border: 2px solid #F1F5F9 !important; /* slate-100 */
+            border-radius: 1.25rem !important;
+            padding: 1rem 1.25rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 700 !important;
+            color: #1E293B !important; /* slate-800 */
+            transition: all 0.2s ease-in-out !important;
+            outline: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        }
+
+        .premium-input:focus {
+            border-color: rgb(158, 2, 80) !important;
+            box-shadow: 0 0 0 4px rgba(158, 2, 80, 0.08) !important;
+            background-color: white !important;
+        }
+
+        .premium-label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94A3B8; /* slate-400 */
+            margin-bottom: 0.5rem;
+            margin-left: 0.25rem;
+        }
     </style>
     @stack('styles')
 </head>
