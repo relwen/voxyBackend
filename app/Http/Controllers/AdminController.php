@@ -160,5 +160,26 @@ class AdminController extends Controller
             'success' => true,
             'message' => 'Utilisateur désactivé'
         ]);
+    /**
+     * Envoyer une notification push à tous les utilisateurs
+     */
+    public function sendNotification(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+        ]);
+
+        try {
+            $firebaseService = new \App\Services\FirebaseService();
+            $result = $firebaseService->sendToAll($request->title, $request->body);
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'envoi : ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
