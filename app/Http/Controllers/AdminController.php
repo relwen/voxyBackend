@@ -160,6 +160,8 @@ class AdminController extends Controller
             'success' => true,
             'message' => 'Utilisateur désactivé'
         ]);
+    }
+
     /**
      * Envoyer une notification push à tous les utilisateurs
      */
