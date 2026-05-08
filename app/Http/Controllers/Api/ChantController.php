@@ -307,9 +307,9 @@ class ChantController extends Controller
     }
     
     /**
-     * Afficher les chants d'une section spécifique
+     * Créer une nouvelle section de chants
      */
-    public function show($id): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -322,66 +322,240 @@ class ChantController extends Controller
                 ], 403);
             }
             
-            // Récupérer la section
+            $request->validate([
+                'nom' => 'required|string|max:255',
+                'description' => 'nullable|string',
+            ]);
+            
+            // Récupérer ou créer la rubrique "Chants"
+            $chantsRubrique = Category::firstOrCreate(
+                ['name' => 'Chants', 'chorale_id' => $choraleId],
+                [
+                    'description' => 'Rubrique des chants',
+                    'structure_type' => 'with_sections',
+                    'icon' => 'music_note',
+                    'color' => '#4CAF50',
+                ]
+            );
+            
+            // Créer la section
+            $section = \App\Models\RubriqueSection::create([
+                'category_id' => $chantsRubrique->id,
+                'nom' => $request->nom,
+                'description' => $request->description,
+                'type' => 'section',
+                'order' => \App\Models\RubriqueSection::where('category_id', $chantsRubrique->id)->max('order') + 1 ?? 0,
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Section de chants créée avec succès',
+                'data' => [
+                    'id' => $section->id,
+                    'nom' => $section->nom,
+                    'description' => $section->description,
+                    'couleur' => $chantsRubrique->color ?? '#4CAF50',
+                    'icone' => $chantsRubrique->icon ?? 'music_note',
+                    'chants_count' => 0,
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Erreur dans ChantController::store: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création de la section: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mettre à jour une section de chants
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $choraleId = $user?->chorale_id;
+            
             $section = \App\Models\RubriqueSection::where('id', $id)
                 ->whereHas('category', function($query) use ($choraleId) {
                     $query->where('name', 'Chants')
                           ->where('chorale_id', $choraleId);
                 })
-                ->with(['partitions.pupitre', 'partitions.user'])
-                ->first();
+                ->firstOrFail();
             
-            if (!$section) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Section de chants non trouvée'
-                ], 404);
-            }
+            $request->validate([
+                'nom' => 'sometimes|required|string|max:255',
+                'description' => 'nullable|string',
+            ]);
             
-            // Filtrer les partitions pour exclure celles liées aux messes
-            $messesRubrique = Category::where('name', 'Messes')
-                ->where('chorale_id', $choraleId)
-                ->first();
-            
-            $messeSectionIds = [];
-            if ($messesRubrique) {
-                $messeSectionIds = \App\Models\RubriqueSection::where('category_id', $messesRubrique->id)
-                    ->pluck('id')
-                    ->toArray();
-            }
-            
-            $validPartitions = $section->partitions->filter(function($partition) use ($messeSectionIds) {
-                // Exclure les partitions qui ont un messe_part défini
-                $messePart = $partition->messe_part ?? [];
-                if (!empty($messePart) && isset($messePart['part'])) {
-                    return false;
-                }
-                
-                // Exclure les partitions dont rubrique_section_id pointe vers une section de messe
-                if ($partition->rubrique_section_id && in_array($partition->rubrique_section_id, $messeSectionIds)) {
-                    return false;
-                }
-                
-                return true;
-            });
-            
-            // Convertir les partitions en format ChantDeMesse
-            $chants = $validPartitions->map(function($partition) {
-                return $this->partitionToChantDeMesse($partition);
-            })->values();
+            $section->update($request->only(['nom', 'description']));
             
             return response()->json([
                 'success' => true,
-                'data' => $chants
+                'message' => 'Section de chants mise à jour avec succès',
+                'data' => [
+                    'id' => $section->id,
+                    'nom' => $section->nom,
+                    'description' => $section->description,
+                ]
             ]);
         } catch (\Exception $e) {
-            Log::error('Erreur dans ChantController::show: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
-            
+            Log::error('Erreur dans ChantController::update: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération des chants: ' . $e->getMessage()
+                'message' => 'Erreur lors de la mise à jour: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Supprimer une section de chants
+     */
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $choraleId = $user?->chorale_id;
+            
+            $section = \App\Models\RubriqueSection::where('id', $id)
+                ->whereHas('category', function($query) use ($choraleId) {
+                    $query->where('name', 'Chants')
+                          ->where('chorale_id', $choraleId);
+                })
+                ->firstOrFail();
+            
+            // Supprimer les partitions liées
+            \App\Models\Partition::where('rubrique_section_id', $id)->delete();
+            
+            $section->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Section de chants supprimée avec succès'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur dans ChantController::destroy: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload d'un fichier pour un chant (section)
+     */
+    public function uploadFile(Request $request, $chantId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $choraleId = $user?->chorale_id;
+
+            if (!$choraleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous devez être associé à une chorale'
+                ], 403);
+            }
+
+            // Validation
+            $request->validate([
+                'pupitre' => 'required|string',
+                'file_type' => 'required|string|in:audio,image,pdf',
+                'audio_file' => 'nullable|file|mimes:mp3,wav,ogg,m4a,aac|max:20480',
+                'image_file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+                'pdf_file' => 'nullable|file|mimes:pdf|max:20480',
+            ]);
+
+            $pupitre = $request->input('pupitre');
+            $fileType = $request->input('file_type');
+
+            // Déterminer quel fichier uploader
+            $fileField = $fileType . '_file';
+            if (!$request->hasFile($fileField)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun fichier fourni'
+                ], 400);
+            }
+
+            $file = $request->file($fileField);
+
+            // Créer le chemin
+            $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+            $directory = "chants/{$chantId}/{$pupitre}/{$fileType}";
+
+            // Stocker le fichier
+            $path = $file->storeAs($directory, $fileName, 'public');
+
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'upload du fichier'
+                ], 500);
+            }
+
+            // Récupérer ou créer la partition pour ce chant et ce pupitre
+            // Pour les chants simples, on utilise le rubrique_section_id
+            $partition = \App\Models\Partition::firstOrCreate(
+                [
+                    'rubrique_section_id' => $chantId,
+                    'pupitre_id' => $this->getPupitreIdByName($pupitre, $choraleId),
+                    'chorale_id' => $choraleId,
+                ],
+                [
+                    'title' => "Partition $pupitre",
+                    'description' => "Fichiers pour le pupitre $pupitre",
+                    'user_id' => $user->id,
+                    'files' => [],
+                ]
+            );
+
+            // Ajouter le fichier au tableau 'files'
+            $files = $partition->files ?? [];
+            $files[] = [
+                'path' => $path,
+                'type' => $fileType,
+                'pupitre' => $pupitre,
+                'name' => $file->getClientOriginalName(),
+                'uploaded_at' => now()->toISOString(),
+            ];
+
+            $partition->files = $files;
+            $partition->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Fichier uploadé avec succès',
+                'data' => [
+                    'path' => $path,
+                    'url' => asset('storage/' . $path),
+                    'pupitre' => $pupitre,
+                    'file_type' => $fileType,
+                    'partition_id' => $partition->id,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur dans ChantController::uploadFile: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Utilitaire pour récupérer l'ID d'un pupitre par son nom
+     */
+    private function getPupitreIdByName($name, $choraleId)
+    {
+        $pupitre = \App\Models\ChoralePupitre::where('chorale_id', $choraleId)
+            ->where('nom', 'LIKE', '%' . $name . '%')
+            ->first();
+        
+        return $pupitre?->id;
     }
 }

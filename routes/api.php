@@ -87,10 +87,13 @@ Route::middleware("auth:sanctum")->group(function () {
 
     // Chant routes (partitions de la catégorie "Chants")
     Route::get("/chants-de-messe", [ChantController::class, "index"]);
+    Route::post("/chants-de-messe", [ChantController::class, "store"]);
     Route::get("/chants-de-messe/{id}", [ChantController::class, "show"]);
+    Route::put("/chants-de-messe/{id}", [ChantController::class, "update"]);
+    Route::delete("/chants-de-messe/{id}", [ChantController::class, "destroy"]);
 
     // Upload de fichiers pour les chants avec métadonnées de pupitre
-    Route::post("/chants/{id}/upload-file", [MesseController::class, "uploadFile"]);
+    Route::post("/chants/{id}/upload-file", [ChantController::class, "uploadFile"]);
 
     // Routes pour l'importation
     Route::delete("/messes/clear-all", [MesseController::class, "clearAll"]);
@@ -106,4 +109,3 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("/vocalises-sections/{sectionId}/vocalises/{vocaliseId}", [ApiVocaliseController::class, "updateVocalise"]);
     Route::delete("/vocalises-sections/{sectionId}/vocalises/{vocaliseId}", [ApiVocaliseController::class, "destroyVocalise"]);
 });
- 
