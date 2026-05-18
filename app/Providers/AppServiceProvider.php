@@ -12,6 +12,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        $this->app->bind('path.public', function () {
+            realpath(base_path() . '/../public_html');
+        });
+
     }
 
     /**
@@ -22,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         // Enregistrer le helper FileHelper
         if (!class_exists('FileHelper')) {
             require_once app_path('Helpers/FileHelper.php');
-        require_once app_path('Helpers/IconHelper.php');
+            require_once app_path('Helpers/IconHelper.php');
         }
     }
 }
