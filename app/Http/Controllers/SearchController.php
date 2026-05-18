@@ -181,10 +181,22 @@ class SearchController extends Controller
 
         return collect($files)
             ->filter(function($file) use ($type) {
+                if (is_string($file)) {
+                    $pathLower = strtolower($file);
+                    switch ($type) {
+                        case 'audio': return preg_match('/\.(mp3|wav|m4a|aac|ogg|opus|flac|mp4)$/i', $pathLower);
+                        case 'pdf': return strpos($pathLower, '.pdf') !== false;
+                        case 'image': return preg_match('/\.(jpg|jpeg|png|gif|bmp|webp)$/i', $pathLower);
+                        default: return false;
+                    }
+                }
                 $fileType = $file['type'] ?? '';
                 return strpos($fileType, $type) !== false;
             })
-            ->pluck('path')
+            ->map(function($file) {
+                return is_string($file) ? $file : ($file['path'] ?? '');
+            })
+            ->filter()
             ->values()
             ->toArray();
     }
@@ -200,10 +212,16 @@ class SearchController extends Controller
 
         return collect($files)
             ->filter(function($file) use ($pupitre) {
+                if (is_string($file)) {
+                    return stripos($file, $pupitre) !== false;
+                }
                 $filePupitre = $file['pupitre'] ?? $file['voice_part'] ?? '';
                 return strcasecmp($filePupitre, $pupitre) === 0;
             })
-            ->pluck('path')
+            ->map(function($file) {
+                return is_string($file) ? $file : ($file['path'] ?? '');
+            })
+            ->filter()
             ->values()
             ->toArray();
     }
