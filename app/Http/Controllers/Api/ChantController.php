@@ -105,6 +105,98 @@ class ChantController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Afficher les détails d'une section de chants et ses partitions
+     */
+    public function show($id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $choraleId = $user?->chorale_id;
+            
+            if (!$choraleId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous devez être associé à une chorale'
+                ], 403);
+            }
+            
+            // On vérifie que la section appartient à la catégorie "Chants" de la chorale
+            $section = \App\Models\RubriqueSection::with(['category', 'partitions.user'])
+                ->where('id', $id)
+                ->whereHas('category', function($query) use ($choraleId) {
+                    $query->where('name', 'Chants')
+                          ->where('chorale_id', $choraleId);
+                })
+                ->firstOrFail();
+            
+            // Filtrer les partitions pour exclure celles liées aux messes
+            $messesRubrique = Category::where('name', 'Messes')
+                ->where('chorale_id', $choraleId)
+                ->first();
+            
+            $messeSectionIds = [];
+            if ($messesRubrique) {
+                $messeSectionIds = \App\Models\RubriqueSection::where('category_id', $messesRubrique->id)
+                    ->pluck('id')
+                    ->toArray();
+            }
+            
+            $validPartitions = $section->partitions->filter(function($partition) use ($messeSectionIds) {
+                // Exclure les partitions qui ont un messe_part défini
+                $messePart = $partition->messe_part ?? [];
+                if (!empty($messePart) && isset($messePart['part'])) {
+                    return false;
+                }
+                
+                // Exclure les partitions dont rubrique_section_id pointe vers une section de messe
+                if ($partition->rubrique_section_id && in_array($partition->rubrique_section_id, $messeSectionIds)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            $chants = $validPartitions->map(function($partition) {
+                return $this->partitionToChantDeMesse($partition);
+            })->values();
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $section->id,
+                    'nom' => $section->nom,
+                    'description' => $section->description,
+                    'couleur' => $section->category->color ?? '#4CAF50',
+                    'icone' => $section->category->icon ?? 'music_note',
+                    'active' => true,
+                    'structure' => $section->structure ?? [],
+                    'chants_count' => $chants->count(),
+                    'created_at' => $section->created_at,
+                    'updated_at' => $section->updated_at,
+                    'chants' => $chants
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ChantController::show - Erreur: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            
+            if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Section de chants introuvable',
+                    'data' => null
+                ], 404);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des détails de la section: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
+    }
     
     /**
      * Convertir une partition en format ChantDeMesse
