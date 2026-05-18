@@ -18,22 +18,56 @@ class FirebaseService
     }
 
     /**
-     * Envoyer une notification à tous les utilisateurs ayant un token FCM
+     * Envoyer une notification à tous les utilisateurs (via le topic général all_users)
      */
     public function sendToAll($title, $body, $data = [])
     {
-        $tokens = User::whereNotNull('fcm_token')
-            ->pluck('fcm_token')
-            ->toArray();
+        return $this->sendToTopic('all_users', $title, $body, $data);
+    }
 
-        if (empty($tokens)) {
-            return [
-                'success' => false,
-                'message' => 'Aucun utilisateur avec un token FCM trouvé'
-            ];
+    /**
+     * Envoyer une notification à un Topic spécifique (FCM HTTP v1)
+     */
+    public function sendToTopic($topic, $title, $body, $data = [])
+    {
+        // Si le fichier d'authentification n'existe pas, on simule l'envoi en loguant
+        if (!file_exists($this->serviceAccountPath)) {
+            Log::info("FCM Simulate Topic: To Topic: $topic, Title: $title, Body: $body");
+            return ['success' => true, 'message' => 'Simulated (missing firebase-auth.json)'];
         }
 
-        return $this->sendMulticast($tokens, $title, $body, $data);
+        try {
+            $accessToken = $this->getAccessToken();
+            
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json',
+            ])->post("https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send", [
+                'message' => [
+                    'topic' => $topic,
+                    'notification' => [
+                        'title' => $title,
+                        'body' => $body,
+                    ],
+                    'data' => empty($data) ? new \stdClass() : array_map('strval', $data), // FCM expects a Map (object), not a list
+                    'android' => [
+                        'notification' => [
+                            'channel_id' => 'high_importance_channel'
+                        ]
+                    ]
+                ]
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true];
+            } else {
+                Log::error('FCM Topic Error: ' . $response->body());
+                return ['success' => false, 'error' => $response->body()];
+            }
+        } catch (\Exception $e) {
+            Log::error('FCM Topic Exception: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 
     /**

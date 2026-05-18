@@ -54,10 +54,7 @@ class AdminController extends Controller
             $result = $firebaseService->sendToAll($request->title, $request->body);
 
             if (isset($result['success']) && $result['success']) {
-                $msg = 'Notification envoyée avec succès.';
-                if (isset($result['success_count']) || isset($result['failure_count'])) {
-                    $msg .= ' (Succès: ' . ($result['success_count'] ?? 0) . ', Échecs: ' . ($result['failure_count'] ?? 0) . ')';
-                }
+                $msg = 'Notification globale envoyée avec succès à tous les utilisateurs (via le topic général).';
                 return back()->with('success', $msg);
             } else {
                 return back()->with('error', 'Erreur lors de l\'envoi de la notification: ' . ($result['message'] ?? $result['error'] ?? 'Erreur inconnue'));
