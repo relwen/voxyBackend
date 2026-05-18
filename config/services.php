@@ -36,7 +36,7 @@ return [
     ],
 
     'itsenda' => [
-        'bearer_token' => env('ITSENDA_BEARER_TOKEN', '4a09d11a8fd9559a591c16df9d04fa372cf99d258258016c7c6d467e667730fd'),
+        'bearer_token' => env('ITSENDA_BEARER_TOKEN', '4f83b7708edb2dbc5fc560dd812f19ed18e32f661ca0e2462b94d902d2799c22'),
         'base_url' => env('ITSENDA_BASE_URL', 'https://wasenderapi.com/api'),
     ],
 
