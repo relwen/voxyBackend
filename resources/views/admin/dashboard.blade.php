@@ -181,6 +181,30 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Envoi de Notification Push -->
+        <div class="rounded-3xl bg-white p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-900 border-b border-gray-50 pb-4 mb-4">
+                <i class="fas fa-paper-plane text-primary mr-2"></i> Envoyer une Notification
+            </h3>
+            <form action="{{ route('admin.send-notification') }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                    <input type="text" name="title" id="title" required placeholder="Ex: Nouvelle partition disponible !" 
+                        class="w-full rounded-xl border-gray-200 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 text-sm">
+                </div>
+                <div>
+                    <label for="body" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea name="body" id="body" rows="3" required placeholder="Tapez votre message ici..." 
+                        class="w-full rounded-xl border-gray-200 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full inline-flex justify-center items-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-dark transition-colors">
+                    <i class="fas fa-paper-plane mr-2"></i> Envoyer à tous
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 @endsection

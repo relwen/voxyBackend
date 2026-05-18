@@ -40,6 +40,35 @@ class AdminController extends Controller
     }
 
     /**
+     * Envoyer une notification push à tous les utilisateurs
+     */
+    public function sendNotification(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+        ]);
+
+        try {
+            $firebaseService = new \App\Services\FirebaseService();
+            $result = $firebaseService->sendToAll($request->title, $request->body);
+
+            if (isset($result['success']) && $result['success']) {
+                $msg = 'Notification envoyée avec succès.';
+                if (isset($result['success_count']) || isset($result['failure_count'])) {
+                    $msg .= ' (Succès: ' . ($result['success_count'] ?? 0) . ', Échecs: ' . ($result['failure_count'] ?? 0) . ')';
+                }
+                return back()->with('success', $msg);
+            } else {
+                return back()->with('error', 'Erreur lors de l\'envoi de la notification: ' . ($result['message'] ?? $result['error'] ?? 'Erreur inconnue'));
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi de notification: ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de l\'envoi : ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Gestion des utilisateurs
      */
     public function users()

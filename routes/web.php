@@ -26,6 +26,7 @@ Route::post('/register-chorale', [WebAuthController::class, 'registerChorale'])-
 // Routes protégées pour l'administration
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin', [WebAdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::post('/admin/send-notification', [WebAdminController::class, 'sendNotification'])->name('admin.send-notification');
     
     // Gestion des utilisateurs
     Route::get('/admin/users', [WebAdminController::class, 'users'])->name('admin.users');
