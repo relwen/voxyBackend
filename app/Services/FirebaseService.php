@@ -89,7 +89,7 @@ class FirebaseService
                         'title' => $title,
                         'body' => $body,
                     ],
-                    'data' => array_map('strval', $data), // Toutes les valeurs data doivent être des chaînes
+                    'data' => empty($data) ? new \stdClass() : array_map('strval', $data), // FCM expects a Map (object), not a list
                     'android' => [
                         'notification' => [
                             'channel_id' => 'high_importance_channel'
@@ -98,7 +98,7 @@ class FirebaseService
                 ]
             ]);
 
-            if ($response.successful()) {
+            if ($response->successful()) {
                 return ['success' => true];
             } else {
                 Log::error('FCM Error: ' . $response->body());
