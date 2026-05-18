@@ -31,6 +31,9 @@ Route::get("/chorales", [ChoraleController::class, "index"]);
 Route::get("/chorales/{id}", [ChoraleController::class, "show"]);
 Route::get("/chorales/{id}/pupitres", [ChoraleController::class, "getPupitres"]);
 
+// Search route (recherche globale)
+Route::get("/search", [SearchController::class, "search"]);
+
 // Protected routes
 Route::middleware("auth:sanctum")->group(function () {
     // Auth routes
@@ -57,9 +60,6 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::post("/chorales", [ChoraleController::class, "store"]);
     Route::put("/chorales/{id}", [ChoraleController::class, "update"]);
     Route::delete("/chorales/{id}", [ChoraleController::class, "destroy"]);
-
-    // Search route (recherche globale)
-    Route::get("/search", [SearchController::class, "search"]);
 
     // Category routes
     Route::apiResource("categories", CategoryController::class);

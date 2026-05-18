@@ -25,7 +25,7 @@ class SearchController extends Controller
             ], 400);
         }
 
-        $user = Auth::user();
+        $user = auth('sanctum')->user();
         $choraleId = $user?->chorale_id;
 
         // Rechercher dans les partitions
