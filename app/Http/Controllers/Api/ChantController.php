@@ -164,19 +164,7 @@ class ChantController extends Controller
             
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $section->id,
-                    'nom' => $section->nom,
-                    'description' => $section->description,
-                    'couleur' => $section->category->color ?? '#4CAF50',
-                    'icone' => $section->category->icon ?? 'music_note',
-                    'active' => true,
-                    'structure' => $section->structure ?? [],
-                    'chants_count' => $chants->count(),
-                    'created_at' => $section->created_at,
-                    'updated_at' => $section->updated_at,
-                    'chants' => $chants
-                ]
+                'data' => $chants
             ]);
         } catch (\Exception $e) {
             Log::error('ChantController::show - Erreur: ' . $e->getMessage());
